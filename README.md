@@ -1,5 +1,5 @@
 # Intelligent Banking Assistant(RAG Chatbot)-
-Team members 
+Team members of cache Me outside,  
 Aseye Ekpe, 
 Christopher Obinwa ,
 Lebohang Tangu. 
