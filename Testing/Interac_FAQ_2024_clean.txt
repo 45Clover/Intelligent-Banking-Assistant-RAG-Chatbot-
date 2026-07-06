@@ -1,0 +1,341 @@
+
+--- Page 1 ---
+
+Interac e-Transfer in SBI Canada Bank 
+Frequently Asked Questions 
+
+What is an Interac e-Transfer? 
+Interac e-Transfer® is a simple, secure, fast, and convenient way to send, request, and receive 
+money between eligible bank accounts with participating Canadian financial institutions using 
+online banking. To send money using the Interac e-Transfer service, you will need the recipient's 
+email address or their mobile number. 
+Can I send or receive an Interac e-Transfer in currencies other than Canadian dollars? 
+No. Funds sent by Interac e-Transfer must be in Canadian dollars and must be deposited 
+into an account at a Canadian Financial Institution. 
+Which types of bank accounts can be used for sending and receiving an Interac e-Transfer? 
+The following accounts offered by SBI Canada Bank can be used for sending and receiving 
+funds through Interac e-Transfer: 
+• Checking Account 
+• Saving Account 
+• Super saver Account 
+• Premium Savings Account 
+What is a security question? What are the guidelines for the security answer? 
+The security question verifies the recipient’s identity and protects your funds from being 
+received by the wrong person. It is your responsibility to set a security question when you 
+send the transfer and communicate the answer to the security question to the recipient 
+by phone or in person. For security purposes, the answer to the security question should 
+never be sent in an email or text message. 
+Guidelines for the security answer: 
+• the answer must be one word. 
+• the answer must not contain any blank spaces . 
+• the answer is not case sensitive, and both letters and/or numbers are accepted. 
+• the answer cannot contain special characters ( & $, etc.). 
+• the answer should be kept strictly confidential between the sender and recipient.
+
+
+--- Page 2 ---
+
+What is the difference between a cancelled payment and reclaim of funds? 
+A cancelled payment occurs when you request a stop payment on your transfer request. 
+Reclaim of funds occurs when the Interac e-Transfer is undeliverable for one of following 
+reasons: 
+• Recipient's e-mail address is not valid. 
+• Recipient is unable to answer the security question. 
+• Recipient declines the transfer. 
+• The transfer has expired, or funds not claimed more then 30 days. 
+When an Interac e-Transfer cannot be completed, the funds are returned to the sender. 
+How secure is it to send money by email through Interac eTransfer? 
+The money never travels by email. Email is only used to notify and provide instructions to 
+the recipient on how to deposit the money or if the transfer expires. The money always 
+resides safely at a financial institution and is transferred through the secur e payment 
+network used by banks. 
+Other security measures include: 
+• Encryption technology 
+• For the sender-Confidential user ID and password are required to log into your 
+bank account online 
+• For the recipient – You are required to provide a correct answer to the security 
+question that the sender has chosen. The sender should inform you of the correct 
+answer directly to ensure you are the recipient of the money.
+
+
+--- Page 3 ---
+
+Sending Money 
+What are the steps to Send Money? 
+You can send money through Interac using SBICA YONO App or through Internet Banking. 
+Follow few simple steps as described below for sending money in just a few clicks: 
+
+A. SBICA YONO App: 
+
+ Login to SBICA YONO App using your user ID + password or MPI N 
+
+✓ Go to “Fund Transfer” tab 
+✓ Select “ Interac e-Transfer” option . 
+✓ Click on “Send Interac e-Transfer ”
+
+
+--- Page 4 ---
+
+✓ Provide the details for sending the e-transfer 
+✓ Verify the transaction details and click “Confirm” 
+✓ Enter the One-time password (OTP) sent to your registered mobile number / Email 
+address 
+
+B. Internet Banking: 
+
+Login to SBI Canada Bank online banking . If you have not registered for Online Banking, 
+you will have to do that first. And then click “Send Interac e-Transfer ” menu. 
+Send money in a few simple steps: 
+• Login to SBIC Internet Banking portal and click Interac e-Transfer menu. 
+• Enter your transaction password. 
+• Select “Send Interac e-Transfer ” and read the displayed information.
+
+
+--- Page 5 ---
+
+• Read the important information related to send money through Interac e-transfer and 
+proceed next by clicking “Send Money ” to go the next screen . 
+
+• On the new screen, provide the following mandatory details to initiate the e-transfer 
+transaction: 
+✓ “Pay from Account”-select the account you wish to make the payment 
+from . The dropdown will include all eligible CAD operati ve accounts . 
+✓ “Pay to Contact”-choose the “Contact Name” you wish to send money to 
+✓ Enter the amount (Be informed of the “transaction limits ” for sending money 
+displayed on the right side of the screen ) 
+✓ Enter the message for the transaction 
+ Click “continue”
+
+
+--- Page 6 ---
+
+✓ Verify the transaction details for correctness. If you wish to make any changes, click on 
+“Back to edit ” 
+✓ Accept the Terms and conditions 
+✓ Enter the transaction password and click “ confirm payment ” to submit the transaction 
+
+What are the steps to Add a Contact (Recipient) ? 
+You may add a contact for sending / requesting Interac e-transfer using either SBIC Online 
+Banking or SBICA YONO App. 
+
+Adding a contact on SBICA YONO App : 
+
+✓ Login to SBICA YONO App using your login credentials / MPIN 
+✓ Go to Fund Transfer tab 
+✓ Click on Interac e-transfer 
+✓ Go to “ Manage Contacts ” and click on “+ “ button available at the bottom right 
+side of the screen. 
+✓ Provide the contact’ s name, email address and/or mobile number. 
+
+✓ Select a Security Question
+
+
+--- Page 7 ---
+
+✓ Provide the Security Answer (you must inform the recipient of the answer to the 
+Security Question using a secure method) 
+✓ Click “Next” 
+✓ Verify the Contact details for correctness. If you wish to make changes in any of 
+the details, click on the back arrow at the top. 
+✓ Proceed by clicking on “Confirm” button 
+✓ Enter the one-time password (OTP) sent to your registered mobile number or email 
+address. 
+✓ Your new contact will be added successfully. 
+
+Adding a contact on Internet Banking : 
+
+✓ Login to SBIC Online Banking using your login credentials 
+✓ Go to “Transactions” tab and click on “Interac e-Transfer” 
+✓ Go to “Manage Contacts” 
+
+✓ Click on “ Add Contact ”
+
+
+--- Page 8 ---
+
+✓ Provide the contact’s name, email address and/or mobile number. 
+✓ Select a Security Question 
+✓ Provide the Security Answer (you must inform the recipient of the answer to the 
+Security Question using a secure method) 
+✓ Click “ Continue ” button 
+
+✓ Verify the Contact details for correctness. If you wish to make changes in any of 
+the details, click on the “back” button. 
+✓ Read the “Terms & Conditions” and provide your consent by clicking the checkbox. 
+✓ Enter your transaction password and click on “Confirm Details” to add the new 
+contact.
+
+
+--- Page 9 ---
+
+Is there a service charge for using Interac e-Transfer to send money? 
+No. SBI Canada Bank is offering Interac e-Transfers for free, and no service charge is levied. 
+Can I send money by Interac e-Transfer to someone outside of Canada? 
+No. Money sent by Interac e-Transfer must be in Canadian dollars and must be deposited 
+into an account at a Canadian financial institution. You can use remittance service for 
+recipients outside of Canada or may receive e-transfers if they are depositing the money 
+into their Canadian dollar account at a financial institution in Canada. 
+
+What is the maximum limit for sending funds? 
+
+Per transaction $3,000 
+Daily $3,000 (daily limit) 
+Weekly $10,000 (per 7-day period) 
+Monthly $20,000 (per 30-day period) 
+
+What will happen after I send money via Interac e-Transfer? 
+After you send money using Interac e-Transfer, the recipient will receive an email from 
+Interac with instructions on how to deposit the money you have sent.
+
+
+--- Page 10 ---
+
+How do I cancel an Interac e-Transfer? 
+If the recipient has not yet deposited the money, you can cancel the transfer in a few simple 
+steps: 
+• Login to SBIC Online Banking portal or SBICA YONO App. 
+• If you are using Online banking portal, go to “Transactions” and click on “Interac 
+e-Transfer”. If using YONO App, go to “Fund Transfer” and click on “Interac e-Transfer”. 
+• Click on “View Transaction History” 
+• Select the transaction you wish to cancel and click on “Cancel” button. 
+
+Once the e-transfer is cancelled, a confirmation number will be provided to you and the 
+money will be deposited back into your account. An automated email will also be sent to 
+the recipient indicating that the transfer has been cancelled. 
+
+Same steps can be followed to cancel a transaction on Internet Banking. 
+
+Is there an expiry date on my Interac e-Transfer? 
+
+The Interac e-Transfer will expire in 30 days. When a transfer expires, you will receive a 
+notice via email with instructions on how to reclaim the funds. If you do not reclaim the 
+funds within 30 days of the expiry, the transfer will automatically be cancelled, and the 
+money will be returned to the account that the transfer was originated from. 
+Receiving Money 
+What are steps for depositing money sent by Interac eTransfer? 
+When someone sends you an Interac e-Transfer, you will receive an email from Interac . Follow 
+these steps to deposit the money: 
+• Upon clicking on the link received over email, receiver will be given an option to 
+accept or reject, once the user select accept, an option will be given to choose 
+bank to deposit fund. 
+• Upon selecting the bank, receiver will be redirected to corresponding bank’s 
+online banking website. 
+• Select SBI Canada Bank to receive the money and login with SBIC online banking 
+login credentials. After successful login, SBIC online banking session will be 
+active.
+
+
+--- Page 11 ---
+
+Please Note: Functionality to receive money sent through Interac e-transfer is 
+currently available only on SBIC online banking. 
+
+• Provide the correct answer to the security question (you should have received 
+this from the sender separately) 
+• Select the account in which you wish to deposit the amount. 
+• Confirm the Receive Money transaction and enter your transaction password. 
+Is there a service fee for receiving money sent through Interac e-Transfer? 
+No, SBI Canada Bank is offering the service of Interac e-Transfer free of charge. 
+Are there limits on the amount I can receive? 
+Yes, there are limits on the amount you can receive with SBI Canada Bank as per following 
+table: 
+Per transaction $10,000 
+Daily $10,000 (daily limit) 
+Weekly $70,000 (per 7-day period) 
+Monthly $300,000 (per 30-day period) 
+
+Will I get a reminder to deposit the money received through Interac e-Transfer, and is 
+there a time-limit on the transfer? 
+You will receive reminders by email regarding the outstanding transfer 7, 14, 21 and 28 
+days after the transfer was initiated. After 30 days, the transfer will expire, and you will no 
+longer be able to deposit the funds. 
+
+Request Money 
+What is Request Money? 
+Interac e-Transfer’s “Request Money” feature allows you to request money you are owed. 
+Recipients are instantly notified of your request through an email from Interac . The 
+recipient can then accept the request or decline it. If the request is accepted, the recipient 
+can pay you through their account with a Canadian financial institution, using the Interac
+
+
+--- Page 12 ---
+
+e-Transfer feature. Once done, the requested money will be automatically deposited into 
+your account and the recipient will be notified via email from Interac . 
+How do I request money using Interac e-Transfer? 
+Log in to SBI Canada Bank Online Banking or YONO SBICA App , go to the Interac e-
+Transfer option and select “Request Money”. Simply follow the instructions to select the 
+contact whom you are requesting for money , the amount of money you are requesting 
+and select the account where it will be credited to. 
+Are there any limits for requesting money using Interac eTransfer? 
+Yes, there is a transaction limit of $3,000 while requesting money. 
+How do I cancel a request? 
+To cancel a request for money, log in to your SBI Canada Bank online banking or SBICA 
+YONO App , go to the transaction history and select the Interac eTransfer transaction you 
+wish to cancel. Please note that you cannot cancel a request once it has been fulfilled. 
+Who can I request money from? 
+You can request money from anyone with an email address who has access to online 
+banking at a Canadian financial institution. 
+How is the contact notified when a request for money is sent to them? 
+Similar to sending money via Interac e-Transfer, when you request money through Interac 
+e-Transfer, the recipient/contact will receive a notification at the email address you have 
+prescribed for them. 
+How long are outstanding requests valid for? 
+The default expiry period is 30 days from the date of requesting money. 
+How is the requested money fulfilled? 
+The request for money is fulfilled by your recipient to whom you have sent the request. 
+The recipient can then accept or decline the request. If the request is accepted, the 
+recipient can pay you through their account with a Canadian financial institution, using 
+the Interac e-Transfer feature.
+
+
+--- Page 13 ---
+
+Once the request is fulfilled, how long will it take for me to receive the money? 
+The money sent in response to a Request for Money will take the same time as a regular 
+Interac e-Transfer transaction. 
+
+Autodeposit 
+What is Interac e-Transfer Autodeposit? 
+Autodeposit is an Interac e-Transfer feature that allows you to register and have the 
+incoming Interac e– Transfer funds deposited directly into your Canadian dollar bank 
+account – no security question and answer needed. This feature continues to provide the 
+convenience of Interac e-Transfer, without the need to share any financial information. 
+How do I register for Interac e-Transfer Autodeposit? 
+To register for Interac e-Transfer Auto deposit, log in to the online banking of SBI Canada 
+Bank or SBICA YONO App and go to the Interac e-Transfer section. Once there, click on 
+the “Auto deposit” option. Add the email address to be associated with Interac e-Transfer 
+Auto deposit and select the account into which you want funds deposited and accept the 
+acknowledgments. After registration, you will establish a connection between your email 
+address and the account where your funds will be deposited. 
+ You will receive a request to verify your registration. The next time someone sends funds 
+to the registered email, the money will be deposited directly into your account without 
+the need to answer a security question. 
+Why am I not receiving the Interac e-Transfer Autodeposit registration verification 
+email? 
+If you have not received the Autodeposit verification email, check your junk email folder. If you 
+still can’t find the notification, try to re-register through your online banking. 
+How many email addresses can I register for Interac eTransfer Autodeposit? 
+
+You can set-up auto deposit facility for only one account with SBI Canada Bank using your email 
+address . If an email address is used for registering auto deposit facility with SBI Canada Bank, 
+the same email address cannot be used for registering auto deposit facility with any other 
+financial institution. 
+
+If you try to register an email address that has already been registered for auto deposit with 
+another account, Interac will send you an email asking if you would like to replace the original 
+registration .
+
+
+--- Page 14 ---
+
+How do I de-register my Interac e-Transfer Autodeposit registration? 
+To de-register for Interac e-Transfer Autodeposit, log in to the online banking of SBI Canada 
+Bank or SBICA YONO App and go to the Interac e-Transfer section. Once there, click on the 
+“Autodeposit” option, then click on “active” beside the email address and then click on “Delete”. 
+Once you confirm “Yes” for the deletion, the email address will be de-registered for Auto deposit. 
+
+Do you require more information or assistance? 
+Please email to our online support team: onlinesupport@sbicanada.com or call our Toll-Free Number 
+1-866-724-2669 .
+
