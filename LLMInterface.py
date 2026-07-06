@@ -1,13 +1,12 @@
 from langchain_ollama import OllamaLLM
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
 
 def initialize_llm_interface():
     # Connect to locally running Llama 3.2 engine
-    # Setting temperature=0.0 stops the model from being creative, making it reliable for banking data (eliminate hallucinations)
     llm = OllamaLLM(model="llama3.2", temperature=0.0)
     
-    # Build the System Prompt Template
-    # instructs the model on its identity, guardrails, and how to treat your context documents.
+    # Build the System Prompt Template including a placeholder for Chat History
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
             "You are a compliant, secure banking assistant for HCLTech Bank.\n"
@@ -16,6 +15,8 @@ def initialize_llm_interface():
             "Do not make up facts or use external knowledge under any circumstance.\n\n"
             "Context Documents:\n{context}"
         )),
+        # This dynamically injects the back-and-forth chat history array into the prompt
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{user_query}")
     ])
     
@@ -25,37 +26,50 @@ def initialize_llm_interface():
 
 # --- Execution Simulation ---
 if __name__ == "__main__":
-    print("Initializing local LLM interface layer...")
+    print("Initializing local LLM interface layer with Memory...")
     banking_bot = initialize_llm_interface()
     
-    # PLACEHOLDER - Simulatating data retrieved from the ChromaDB RAG database step
+    # Initialize an empty list to keep track of the chat history
+    memory_buffer = []
+    
+    # Simulating data retrieved from the ChromaDB RAG database step
     mock_rag_context = (
         "Document: rbi_savings_policy.pdf (Page 3)\n"
         "The minimum initial deposit required to open a Student Savings Account is $50. "
-        "Account holders under 18 receive an introductory rate of 3.0% APY."
+        "Account holders receive an introductory rate of 3.0% APY."
     )
     
-    # Take user input
-    user_question = "How much money do I need to start a student account?"
-    print(f"\nUser Query: '{user_question}'")
-    print("Processing (running entirely on your machine)...")
+    #initial question
+    query_1 = "How much money do I need to start a student account?"
+    print(f"\nUser Query 1: '{query_1}'")
     
-    # Run the query through the interface chain
-    response = banking_bot.invoke({
+    response_1 = banking_bot.invoke({
         "context": mock_rag_context,
-        "user_query": user_question
+        "chat_history": memory_buffer, # Passing empty list initially
+        "user_query": query_1
     })
     
-    print("\n--- LLM Response ---")
-    print(response)
+    print("\n--- LLM Response 1 ---")
+    print(response_1)
     
-    # Test guardrails with a question NOT in the context
-    print("\n--- Testing Out-of-Bounds Guardrail ---")
-    bad_question = "What is the capital of France?"
-    print(f"User Query: '{bad_question}'")
+    # Update memory buffer manually with Turn 1 data
+    memory_buffer.append(HumanMessage(content=query_1))
+    memory_buffer.append(AIMessage(content=response_1))
     
-    guardrail_response = banking_bot.invoke({
+    # (Testing Memory)
+    # question relies entirely on the context of Turn 1 ("what is the rate for IT?")
+    query_2 = "Great, and what is the interest rate for it?"
+    print(f"\nUser Query 2: '{query_2}'")
+    
+    response_2 = banking_bot.invoke({
         "context": mock_rag_context,
-        "user_query": bad_question
+        "chat_history": memory_buffer, # Passing the updated history list
+        "user_query": query_2
     })
-    print(guardrail_response)
+    
+    print("\n--- LLM Response 2 ---")
+    print(response_2)
+    
+    # Update memory buffer with Turn 2 data
+    memory_buffer.append(HumanMessage(content=query_2))
+    memory_buffer.append(AIMessage(content=response_2))
