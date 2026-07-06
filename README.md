@@ -1,2 +1,6 @@
-# Cache-Me-Outside-
-hackathon group repos
+# Intelligent Banking Assistant(RAG Chatbot)-
+Team members 
+Aseye Ekpe
+Christopher Obinwa 
+Lebohang Tangu 
+Josh Delos Santos 
