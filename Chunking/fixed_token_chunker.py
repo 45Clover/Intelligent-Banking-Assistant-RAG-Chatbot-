@@ -16,7 +16,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from personal_projects.base_chunker import BaseChunker
+from base_chunker import BaseChunker
 
 
 from attr import dataclass

@@ -3,7 +3,7 @@
 
 from typing import Any, List, Optional
 from chunking_evaluation.utils import Language
-from personal_projects.fixed_token_chunker import TextSplitter
+from fixed_token_chunker import TextSplitter
 import re
 
 def _split_text_with_regex(
