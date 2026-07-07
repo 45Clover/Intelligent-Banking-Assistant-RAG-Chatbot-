@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="added ingest pipeline for seemsless chunking im thinking of spliting the process so we have separate chunks for policies and those for FAQs I'll see later on">
-      <change afterPath="$PROJECT_DIR$/Chunking/embed_chunks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/ingest pipeline.py" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/ingest_pipeline.py" afterDir="false" />
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl">
+      <change afterPath="$PROJECT_DIR$/Chunking/build_vector_db.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +48,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.build_vector_db.executor": "Run",
     "Python.chunking_test_with_txt.executor": "Run",
     "Python.embed_chunks.executor": "Run",
     "Python.ingest pipeline.executor": "Run",
@@ -196,7 +197,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783457135658</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl">
+      <option name="closed" value="true" />
+      <created>1783459440719</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1783459440719</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -234,7 +243,8 @@
     <MESSAGE value="added policies from RBI.. embedding next and more FAQs" />
     <MESSAGE value="fixed the chunking  issue and added a test version that outputs the chunk in a txt , also fixed a structuring the code was tailored to my personal directory its fixed now" />
     <MESSAGE value="added ingest pipeline for seemsless chunking im thinking of spliting the process so we have separate chunks for policies and those for FAQs I'll see later on" />
-    <option name="LAST_COMMIT_MESSAGE" value="added ingest pipeline for seemsless chunking im thinking of spliting the process so we have separate chunks for policies and those for FAQs I'll see later on" />
+    <MESSAGE value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
+    <option name="LAST_COMMIT_MESSAGE" value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
