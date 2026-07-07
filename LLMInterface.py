@@ -1,75 +1,111 @@
+import json
+from pydantic import BaseModel, Field
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.output_parsers import JsonOutputParser
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import LancasterStemmer
+from nltk.tokenize import word_tokenize
+
+# 1. Define the Structured JSON Schema using Pydantic
+class BankingBotResponse(BaseModel):
+    intent: str = Field(description="The classified intent. Must be exactly one of: 'account_inquiry', 'loan_inquiry', or 'out_of_bounds'.")
+    confidence_score: float = Field(description="A value between 0.00 and 1.00 indicating how matching the context is to the query.")
+    response: str = Field(description="The actual answer text based strictly on the context, or the standard out-of-bounds safety message.")
 
 def initialize_llm_interface():
-    # Connect to locally running Llama 3.2 engine
-    llm = OllamaLLM(model="llama3.2", temperature=0.0)
+    # Connect to local Llama 3.2 model
+    llm = OllamaLLM(model="llama3.2", temperature=0.0) #0 temperature for deterministic output
     
-    # Build the System Prompt Template including a placeholder for Chat History
+    # Initialize the output parser tied to our structure template
+    output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
+    
+    # Build System Prompt Template injects JSON formatting layout guidelines dynamically
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
-            "You are a compliant, secure banking assistant for HCLTech Bank.\n"
-            "Use ONLY the provided Context Documents to answer the user's question.\n"
-            "If the answer cannot be found in the context, strictly reply: 'I cannot find that information in our current policies.'\n"
-            "Do not make up facts or use external knowledge under any circumstance.\n\n"
+            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
+            "Analyze the given user query against the provided Context Documents.\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
+            "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
+            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "Format your final output instructions:\n{format_instructions}\n\n"
             "Context Documents:\n{context}"
         )),
-        # This dynamically injects the back-and-forth chat history array into the prompt
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{user_query}")
     ])
     
-    # Chain them together using LangChain expression language
-    llm_chain = prompt_template | llm
+    # Add partial variable injecting format expectations into system prompt
+    prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
+    
+    # Chain them together (Prompt -> LLM -> JSON Parser)
+    llm_chain = prompt_template | llm | output_parser
     return llm_chain
 
-# --- Execution Simulation ---
-if __name__ == "__main__":
-    print("Initializing local LLM interface layer with Memory...")
-    banking_bot = initialize_llm_interface()
+#Memory management for user sessions using SQLite
+DB_CONNECTION_STRING = "sqlite:///chat_history.db"
+
+def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
+    # 1. Automatically connect or initialize the SQLite table mapping for this user ID
+    chat_history_db = SQLChatMessageHistory(
+        session_id=session_id,
+        connection=DB_CONNECTION_STRING
+    )
     
-    # Initialize an empty list to keep track of the chat history
+    # 2. Extract their existing historical messages into a standard list format for your LLM chain
+    past_messages = chat_history_db.messages #The boit isn't remembering history due to this format
+
+    print(f"Messages {past_messages}")
+    
+    # 3. Fire the query through your structured banking bot chain, passing the retrieved historical messages
+    parsed_output = banking_bot_chain.invoke({
+        "context": rag_context,
+        "chat_history": past_messages,
+        "user_query": current_query
+    })
+    
+    # 4. Commit the new turn data directly into the database so it records permanently
+    chat_history_db.add_user_message(current_query)
+    chat_history_db.add_ai_message(parsed_output["response"])
+    
+    return parsed_output
+
+# --- Execution ---
+if __name__ == "__main__":
+    print("Initializing structured local LLM interface layer...")
+    banking_bot = initialize_llm_interface()
     memory_buffer = []
     
-    # Simulating data retrieved from the ChromaDB RAG database step
     mock_rag_context = (
         "Document: rbi_savings_policy.pdf (Page 3)\n"
         "The minimum initial deposit required to open a Student Savings Account is $50. "
         "Account holders receive an introductory rate of 3.0% APY."
     )
+
+    while True:
+        print("User Input: ")
+        user_query = input().lower() #clean user input
+        
+        out = process_user_turn_with_sqlite("customer_777", user_query, banking_bot, mock_rag_context)
+        print(f"\nUser 777 Response: {out['response']}")
+        
+        print("\n--- Structural JSON Output 1 ---")
+        print(json.dumps(out, indent=2))
     
-    #initial question
-    query_1 = "How much money do I need to start a student account?"
-    print(f"\nUser Query 1: '{query_1}'")
-    
-    response_1 = banking_bot.invoke({
-        "context": mock_rag_context,
-        "chat_history": memory_buffer, # Passing empty list initially
-        "user_query": query_1
-    })
-    
-    print("\n--- LLM Response 1 ---")
-    print(response_1)
-    
-    # Update memory buffer manually with Turn 1 data
-    memory_buffer.append(HumanMessage(content=query_1))
-    memory_buffer.append(AIMessage(content=response_1))
-    
-    # (Testing Memory)
-    # question relies entirely on the context of Turn 1 ("what is the rate for IT?")
-    query_2 = "Great, and what is the interest rate for it?"
-    print(f"\nUser Query 2: '{query_2}'")
-    
-    response_2 = banking_bot.invoke({
-        "context": mock_rag_context,
-        "chat_history": memory_buffer, # Passing the updated history list
-        "user_query": query_2
-    })
-    
-    print("\n--- LLM Response 2 ---")
-    print(response_2)
-    
-    # Update memory buffer with Turn 2 data
-    memory_buffer.append(HumanMessage(content=query_2))
-    memory_buffer.append(AIMessage(content=response_2))
+    # ==========================================
+    # TURN 1: Initial Question
+    # ==========================================
+    #"How much money do I need to start a student account?"
+    # ==========================================
+    # TURN 2: Follow-up Question (Testing Memory)
+    # ==========================================
+    #"Great, and what is the interest rate for it?"
+    # ==========================================
+    # TURN 3: Guardrail Check (Out of Bounds)
+    # ==========================================
+    #"Can you tell me how to bake chocolate chip cookies?"
