@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs .">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -224,7 +222,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783467009657</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later">
+      <option name="closed" value="true" />
+      <created>1783535869198</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1783535869198</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -264,7 +270,8 @@
     <MESSAGE value="added ingest pipeline for seemsless chunking im thinking of spliting the process so we have separate chunks for policies and those for FAQs I'll see later on" />
     <MESSAGE value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
     <MESSAGE value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
-    <option name="LAST_COMMIT_MESSAGE" value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
+    <MESSAGE value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
+    <option name="LAST_COMMIT_MESSAGE" value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
