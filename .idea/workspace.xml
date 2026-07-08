@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl">
-      <change afterPath="$PROJECT_DIR$/Chunking/text_query.py" afterDir="false" />
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs .">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +49,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.LLMInterface.executor": "Run",
     "Python.build_vector_db.executor": "Run",
     "Python.chunking_test_with_txt.executor": "Run",
     "Python.embed_chunks.executor": "Run",
@@ -214,7 +216,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783466575474</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs .">
+      <option name="closed" value="true" />
+      <created>1783467009657</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1783467009657</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -253,7 +263,8 @@
     <MESSAGE value="fixed the chunking  issue and added a test version that outputs the chunk in a txt , also fixed a structuring the code was tailored to my personal directory its fixed now" />
     <MESSAGE value="added ingest pipeline for seemsless chunking im thinking of spliting the process so we have separate chunks for policies and those for FAQs I'll see later on" />
     <MESSAGE value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
-    <option name="LAST_COMMIT_MESSAGE" value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
+    <MESSAGE value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
+    <option name="LAST_COMMIT_MESSAGE" value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
