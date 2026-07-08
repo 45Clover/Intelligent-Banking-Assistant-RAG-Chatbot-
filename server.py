@@ -5,8 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import jwt
 
+import chromadb
+from sentence_transformers import SentenceTransformer
+
 # Import the logic you already created in your prior scripts
-from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite
+from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
 
 app = FastAPI()
 
@@ -20,11 +23,18 @@ app.add_middleware(
 
 banking_bot = initialize_llm_interface()
 
-mock_rag_context = (
-    "Document: rbi_savings_policy.pdf (Page 3)\n"
-    "The minimum initial deposit required to open a Student Savings Account is $50. "
-    "Account holders receive an introductory rate of 3.0% APY.\n"
-)
+# mock_rag_context = (
+#     "Document: rbi_savings_policy.pdf (Page 3)\n"
+#     "The minimum initial deposit required to open a Student Savings Account is $50. "
+#     "Account holders receive an introductory rate of 3.0% APY.\n"
+# )
+
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+chroma_client = chromadb.PersistentClient(path="Chunking/chroma_db")
+collection = chroma_client.get_collection(name="banking_kb")
+current_session = generate_anonymous_token()
+
+
 
 class ChatPayload(BaseModel):
     user_query: str
@@ -53,11 +63,13 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         existing_guest_id = decoded_payload["sub"]
         
+        rag_context = retrieve_context(payload.user_query, embedder, collection, top_k=3)
+
         out = process_user_turn_with_sqlite(
             session_id=existing_guest_id,
             current_query=payload.user_query,
             banking_bot_chain=banking_bot,
-            rag_context=mock_rag_context
+            rag_context=rag_context
         )
         
         # === FIX 2: ENSURE FRONTEND EXPECTED KEYS ARE EXPLICITLY RETURNED ===
@@ -72,4 +84,5 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
     
+#first cd to the repo (for Chris) and then run what is below
 #python -m uvicorn server:app --reload --port 8000
