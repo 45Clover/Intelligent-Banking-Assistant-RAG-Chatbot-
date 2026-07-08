@@ -110,7 +110,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
 ##Generating secret tokens for anonymous guest users to access the banking bot without creating an account
 # maybe a sign in option can be implemented later
 
-SECRET_KEY = "your-bank-super-secret-key"
+SECRET_KEY = "your-bank-super-secret-key" #placeholder
 
 
 def generate_anonymous_token():
