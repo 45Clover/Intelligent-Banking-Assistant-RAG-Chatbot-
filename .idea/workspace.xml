@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ran the interface and it works">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,24 +46,24 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.LLMInterface.executor": "Run",
-    "Python.build_vector_db.executor": "Run",
-    "Python.chunking_test_with_txt.executor": "Run",
-    "Python.embed_chunks.executor": "Run",
-    "Python.ingest pipeline.executor": "Run",
-    "Python.recursive_token_chunker.executor": "Run",
-    "Python.testing_pdf_extractor.executor": "Run",
-    "Python.text_query.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/nyash/PycharmProjects/Intelligent-Banking-Assistant-RAG-Chatbot-/Chunking"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.LLMInterface.executor&quot;: &quot;Run&quot;,
+    &quot;Python.build_vector_db.executor&quot;: &quot;Run&quot;,
+    &quot;Python.chunking_test_with_txt.executor&quot;: &quot;Run&quot;,
+    &quot;Python.embed_chunks.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ingest pipeline.executor&quot;: &quot;Run&quot;,
+    &quot;Python.recursive_token_chunker.executor&quot;: &quot;Run&quot;,
+    &quot;Python.testing_pdf_extractor.executor&quot;: &quot;Run&quot;,
+    &quot;Python.text_query.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/nyash/PycharmProjects/Intelligent-Banking-Assistant-RAG-Chatbot-/Chunking&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\nyash\PycharmProjects\Intelligent-Banking-Assistant-RAG-Chatbot-\Chunking" />
@@ -230,7 +232,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783535869198</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="ran the interface and it works">
+      <option name="closed" value="true" />
+      <created>1783536627950</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1783536627950</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -271,7 +281,8 @@
     <MESSAGE value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
     <MESSAGE value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
     <MESSAGE value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
-    <option name="LAST_COMMIT_MESSAGE" value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
+    <MESSAGE value="ran the interface and it works" />
+    <option name="LAST_COMMIT_MESSAGE" value="ran the interface and it works" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
