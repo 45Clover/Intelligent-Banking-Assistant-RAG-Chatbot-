@@ -1,18 +1,20 @@
-import React, { useState } from 'react'; //#http://localhost:5174/
+import React, { useState, useRef, useEffect } from 'react'; //#http://localhost:5174 // npm run dev
 
 function ChatInterface() {
   const [userInput, setUserInput] = useState('');
-  const [aiOutput, setAiOutput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
-  const [confidenceScore, setConfidenceScore] = useState(0);
-  const [sourceLinks, setSourceLinks] = useState([]);
+  const [openMenuIndex, setOpenMenuIndex] = useState(null);
+  const [visibleSourcesIndex, setVisibleSourcesIndex] = useState(null);
+  const scrollRef = useRef(null);
 
   const handleInputChange = (event) => {
     setUserInput(event.target.value);
   };
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = (event) => {
     event.preventDefault();
+    if (!userInput.trim()) return;
+
     // Simulate AI response for demonstration
     // In a real application, you'd call your backend here
     const simulatedResponse = {
@@ -21,96 +23,169 @@ function ChatInterface() {
       sources: ['https://example.com/source1', 'https://example.com/source2'], // Simulated source links
     };
 
-    setAiOutput(simulatedResponse.text);
-    setConfidenceScore(simulatedResponse.confidence);
-    setSourceLinks(simulatedResponse.sources);
-    setChatHistory([...chatHistory, { user: userInput, ai: simulatedResponse.text }]);
+    setChatHistory((prev) => [
+      ...prev,
+      { role: 'user', text: userInput },
+      {
+        role: 'ai',
+        text: simulatedResponse.text,
+        confidence: simulatedResponse.confidence,
+        sources: simulatedResponse.sources,
+      },
+    ]);
     setUserInput('');
   };
 
-  const handleEscalate = () => {
+  const handleEscalate = (index) => {
     // In a real application, you'd trigger your human hand-off logic here
-    console.log('Escalating to human hand-off...');
+    console.log('Escalating to human hand-off...', index);
     alert('Escalating to human hand-off... (Simulation)');
+    setOpenMenuIndex(null);
   };
 
+  const toggleSources = (index) => {
+    setVisibleSourcesIndex((prev) => (prev === index ? null : index));
+    setOpenMenuIndex(null);
+  };
+
+  const toggleMenu = (index) => {
+    setOpenMenuIndex((prev) => (prev === index ? null : index));
+  };
+
+  // Auto-scroll to the latest message whenever the conversation updates
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chatHistory]);
+
   return (
-    <div className="container mt-5">
+    <div className="container mt-5" style={{ maxWidth: '800px' }}>
       <h1>Chat UI</h1>
 
-      <div className="row mt-4">
-        <div className="col-md-6">
-          <h3>Human Input</h3>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-3">
-              <textarea
-                className="form-control"
-                id="humanInput"
-                rows="5"
-                value={userInput}
-                onChange={handleInputChange}
-                placeholder="Enter your query here..."
-              ></textarea>
-            </div>
-            <button type="submit" className="btn btn-primary">
-              Send
-            </button>
-          </form>
-        </div>
+      <div
+        ref={scrollRef}
+        className="border rounded p-3 mt-4"
+        style={{ height: '480px', overflowY: 'auto', backgroundColor: '#e0effb' }}
+      >
+        {chatHistory.length === 0 && (
+          <p className="text-muted text-center mt-5">
+            Your conversation will appear here.
+          </p>
+        )}
 
-        <div className="col-md-6">
-          <h3>AI Output</h3>
-          <div className="mb-3">
-            <textarea
-              className="form-control"
-              id="aiOutput"
-              rows="5"
-              value={aiOutput}
-              readOnly
-              placeholder="AI response will appear here..."
-            ></textarea>
-          </div>
-          <div className="row">
-            <div className="col-md-6">
-              <p>Confidence Score: {confidenceScore.toFixed(2)}</p>
-            </div>
-            <div className="col-md-6 text-end">
-              <button className="btn btn-warning" onClick={handleEscalate}>
-                Escalate to Human
-              </button>
-            </div>
-          </div>
-          <div className="mt-3">
-            <h5>Source Documents</h5>
-            <ul>
-              {sourceLinks.map((link, index) => (
-                <li key={index}>
-                  <a href={link} target="_blank" rel="noopener noreferrer">
-                    {link}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+        {chatHistory.map((message, index) => {
+          const isUser = message.role === 'user';
+          return (
+            <div
+              key={index}
+              className={`d-flex mb-3 ${isUser ? 'justify-content-end' : 'justify-content-start'}`}
+            >
+              <div style={{ maxWidth: '75%' }}>
+                <div
+                  className={`p-2 rounded ${
+                    isUser ? 'bg-primary text-white' : 'bg-white border'
+                  }`}
+                >
+                  {message.text}
+                </div>
 
-      <div className="mt-5">
-        <h3>Chat History</h3>
-        <div className="border p-3 rounded h-400 overflow-auto">
-          {chatHistory.map((message, index) => (
-            <div key={index} className={`mb-3 ${message.user ? 'text-end' : ''}`}>
-              <div
-                className={`d-inline-block p-2 rounded ${
-                  message.user ? 'bg-primary text-white' : 'bg-light'
-                }`}
-              >
-                {message.user ? `You: ${message.user}` : `AI: ${message.ai}`}
+                {!isUser && (
+                  <div className="mt-1 position-relative">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <small className="text-muted">
+                        Confidence: {message.confidence.toFixed(2)}
+                      </small>
+                      <button
+                        className="btn btn-sm btn-outline-secondary"
+                        onClick={() => toggleMenu(index)}
+                        aria-haspopup="true"
+                        aria-expanded={openMenuIndex === index}
+                      >
+                        Options &#9662;
+                      </button>
+                    </div>
+
+                    {openMenuIndex === index && (
+                      <div
+                        className="border rounded bg-white shadow-sm mt-1 position-absolute"
+                        style={{ right: 0, zIndex: 10, minWidth: '200px' }}
+                      >
+                        <button
+                          className="btn btn-sm btn-warning w-100 text-start rounded-0"
+                          onClick={() => handleEscalate(index)}
+                        >
+                          Escalate to Human
+                        </button>
+                        <button
+                          className="btn btn-sm btn-light w-100 text-start rounded-0"
+                          onClick={() => toggleSources(index)}
+                        >
+                          {visibleSourcesIndex === index
+                            ? 'Hide Source Documents'
+                            : 'Show Source Documents'}
+                        </button>
+                      </div>
+                    )}
+
+                    {visibleSourcesIndex === index && (
+                      <div className="mt-2 p-2 border rounded bg-light">
+                        <h6 className="mb-1">Source Documents</h6>
+                        <ul className="mb-0 ps-3">
+                          {message.sources.map((link, linkIndex) => (
+                            <li key={linkIndex}>
+                              <a href={link} target="_blank" rel="noopener noreferrer">
+                                {link}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
+
+      <form onSubmit={handleSubmit} className="mt-3">
+        <div
+          className="d-flex align-items-stretch"
+          style={{ width: "100%"}}
+        >
+          <textarea
+            className="formControl flex-grow-1"
+            id="humanInput"
+            rows="1"
+            value={userInput}
+            onChange={handleInputChange}
+            placeholder="Type your message..."
+            style={{
+              width: "700px",
+              resize: "none",
+              borderTopRightRadius: 0,
+              borderBottomRightRadius: 0,
+            }}
+          />
+
+          <button
+            type="submit"
+            className="btn btn-primary"
+            style={{
+              borderTopLeftRadius: 0,
+              borderBottomLeftRadius: 0,
+              width: "90px",
+              height: "100%",
+              transform: "translateY(-6px)"
+            }}
+          >
+            Send
+          </button>
+        </div>
+      </form>
+
     </div>
   );
 }

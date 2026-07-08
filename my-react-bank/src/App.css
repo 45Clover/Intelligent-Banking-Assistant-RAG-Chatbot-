@@ -182,3 +182,12 @@
     border-right-color: var(--border);
   }
 }
+
+.formControl {
+  width: 300vw;
+  border-radius: 10px;
+}
+
+.sendButton {
+  width: 400%;
+}
