@@ -1,6 +1,6 @@
 import json
 from pydantic import BaseModel, Field
-from langchain_ollama import OllamaLLM
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
@@ -11,6 +11,10 @@ from nltk.corpus import stopwords
 from nltk.stem import LancasterStemmer
 from nltk.tokenize import word_tokenize
 
+import jwt
+import datetime
+import uuid
+
 # 1. Define the Structured JSON Schema using Pydantic
 class BankingBotResponse(BaseModel):
     intent: str = Field(description="The classified intent. Must be exactly one of: 'account_inquiry', 'loan_inquiry', or 'out_of_bounds'.")
@@ -19,7 +23,7 @@ class BankingBotResponse(BaseModel):
 
 def initialize_llm_interface():
     # Connect to local Llama 3.2 model
-    llm = OllamaLLM(model="llama3.2", temperature=0.0) #0 temperature for deterministic output
+    llm = ChatOllama(model="llama3.2", temperature=0.2) #0 temperature for deterministic output
     
     # Initialize the output parser tied to our structure template
     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
@@ -58,9 +62,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     )
     
     # 2. Extract their existing historical messages into a standard list format for your LLM chain
-    past_messages = chat_history_db.messages #The boit isn't remembering history due to this format
-
-    print(f"Messages {past_messages}")
+    past_messages = chat_history_db.messages
     
     # 3. Fire the query through your structured banking bot chain, passing the retrieved historical messages
     parsed_output = banking_bot_chain.invoke({
@@ -75,6 +77,28 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     
     return parsed_output
 
+
+##Generating secret tokens for anonymous guest users to access the banking bot without creating an account
+#maybe a sign in option can be implemented later
+
+SECRET_KEY = "your-bank-super-secret-key"
+
+def generate_anonymous_token():
+    # Create a completely random user ID
+    guest_id = f"guest_{uuid.uuid4().hex[:10]}"
+    
+    # Define payload with an expiration (45 minutes)
+    payload = {
+        "sub": guest_id,
+        "iat": datetime.datetime.utcnow(),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45),
+        "role": "anonymous_guest"
+    }
+    
+    # 3. Sign it
+    token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+    return token
+
 # --- Execution ---
 if __name__ == "__main__":
     print("Initializing structured local LLM interface layer...")
@@ -85,14 +109,20 @@ if __name__ == "__main__":
         "Document: rbi_savings_policy.pdf (Page 3)\n"
         "The minimum initial deposit required to open a Student Savings Account is $50. "
         "Account holders receive an introductory rate of 3.0% APY."
+        "Investor accounts can be opened with a minimum of $1000 and have an interest rate of 2.5% APY.\n\n"
     )
+
+    current_session = generate_anonymous_token()
+    print(f"Generated Anonymous Session Token: {current_session}\n")
 
     while True:
         print("User Input: ")
         user_query = input().lower() #clean user input
+        if user_query == "":
+            user_query = " " #to avoid errors in the LLM chain if user presses enter without typing anythig
         
-        out = process_user_turn_with_sqlite("customer_777", user_query, banking_bot, mock_rag_context)
-        print(f"\nUser 777 Response: {out['response']}")
+        out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, mock_rag_context)
+        print(f"\n[{current_session}] Response: \n{out['response']}")
         
         print("\n--- Structural JSON Output 1 ---")
         print(json.dumps(out, indent=2))
