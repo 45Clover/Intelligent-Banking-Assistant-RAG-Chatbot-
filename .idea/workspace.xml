@@ -1,7 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="fixed retrieval and response" />
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="fixed retrieval and response">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/.oxlintrc.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/README.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/index.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/package-lock.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/package.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/public/favicon.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/public/icons.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/App.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/App.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/ChatInterface.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/hero.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/react.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/vite.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/index.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/main.jsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank copy/vite.config.js" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,7 +36,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="LLM" />
+        <entry key="$PROJECT_DIR$" value="UIconnectLLM" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
