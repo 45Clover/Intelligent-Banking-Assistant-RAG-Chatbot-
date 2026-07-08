@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ran the interface and it works">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
-    </list>
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="fixed retrieval and response" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -240,7 +236,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783536627950</updated>
     </task>
-    <option name="localTasksCounter" value="20" />
+    <task id="LOCAL-00020" summary="fixed retrieval and response">
+      <option name="closed" value="true" />
+      <created>1783543747807</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1783543747807</updated>
+    </task>
+    <option name="localTasksCounter" value="21" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -254,7 +258,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/UserInterface" />
+                        <option value="LLM" />
                       </list>
                     </value>
                   </entry>
@@ -282,7 +286,8 @@
     <MESSAGE value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
     <MESSAGE value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
     <MESSAGE value="ran the interface and it works" />
-    <option name="LAST_COMMIT_MESSAGE" value="ran the interface and it works" />
+    <MESSAGE value="fixed retrieval and response" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixed retrieval and response" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
