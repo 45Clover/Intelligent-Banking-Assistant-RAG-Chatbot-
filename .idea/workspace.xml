@@ -3,23 +3,10 @@
   <component name="ChangeListManager">
     <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="fixed retrieval and response">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/.oxlintrc.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/public/favicon.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/public/icons.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/App.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/App.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/ChatInterface.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/hero.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/react.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/assets/vite.svg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/index.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/src/main.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/my-react-bank copy/vite.config.js" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank/node_modules/.vite/deps/_metadata.json" beforeDir="false" afterPath="$PROJECT_DIR$/my-react-bank/node_modules/.vite/deps/_metadata.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -97,15 +97,22 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t2 = time.time()
     print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")
 
-    parsed_output = banking_bot_chain.invoke({
-        "context": rag_context,
-        "chat_history": past_messages,
-        "user_query": current_query
-    })
+    try:
+        parsed_output = banking_bot_chain.invoke({
+            "context": rag_context,
+            "chat_history": past_messages,
+            "user_query": current_query
+        })
+    except Exception as e:
+        print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
+        parsed_output = {
+            "intent": "out_of_bounds",
+            "confidence_score": 0.0,
+            "response": "I cannot find that information in our current policies."
+        }
     t3 = time.time()
     print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
-
     chat_history_db.add_user_message(current_query)
     chat_history_db.add_ai_message(parsed_output["response"])
     t4 = time.time()
