@@ -9,26 +9,51 @@ function ChatInterface() {
   const scrollRef = useRef(null);
   const TypicalBorderRadius = "12px"; // standard border radius for chat bubbles
 
-  // --- STEP 3 MODIFICATION: INITIALIZE ANONYMOUS GUEST SESSION ON LAUNCH ---
+  // --- STEP 3 MODIFICATION: INITIALIZE ANONYMOUS GUEST SESSION ON LAUNCH ---\
   useEffect(() => {
     const initializeSession = async () => {
       let savedToken = localStorage.getItem("chat_token");
       
-      // If no token exists in the browser storage, request a new one from the server
+      // If no token exists in the browser storage, request a new permanent one
       if (!savedToken) {
-        try {
-          console.log("No guest session token found. Fetching a new anonymous token...");
-          const response = await fetch("http://localhost:8000/api/init-chat"); // Make sure this endpoint exists on your FastAPI server
-          if (response.ok) {
-            const data = await response.json();
-            localStorage.setItem("chat_token", data.token);
-            console.log("Successfully initialized guest token.");
-          }
-        } catch (error) {
-          console.error("Failed to initialize anonymous guest token:", error);
-        }
+        await fetchNewToken();
       } else {
-        console.log("Welcome back! Reusing valid token from local storage.");
+        // Validation check: Make sure the server actually accepts our saved token
+        try {
+          const checkResponse = await fetch("http://localhost:8000/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${savedToken}`
+            },
+            body: JSON.stringify({ user_query: "ping" }), // Simple validation probe
+          });
+
+          if (checkResponse.status === 401) {
+            console.warn("Stored token was rejected by server. Refreshing token identity...");
+            localStorage.removeItem("chat_token");
+            await fetchNewToken();
+          } else {
+            console.log("Welcome back! Reusing valid permanent token from local storage.");
+          }
+        } catch (err) {
+          console.error("Network error while validating existing token:", err);
+        }
+      }
+    };
+
+    // Helper function to handle the token generation network request
+    const fetchNewToken = async () => {
+      try {
+        console.log("Fetching a new permanent anonymous token...");
+        const response = await fetch("http://localhost:8000/api/init-chat");
+        if (response.ok) {
+          const data = await response.json();
+          localStorage.setItem("chat_token", data.token);
+          console.log("Successfully initialized permanent guest token.");
+        }
+      } catch (error) {
+        console.error("Failed to initialize anonymous guest token:", error);
       }
     };
 

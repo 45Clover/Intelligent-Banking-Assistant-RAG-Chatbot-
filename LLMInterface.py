@@ -8,6 +8,7 @@ from langchain_core.output_parsers import JsonOutputParser
 
 import chromadb
 from sentence_transformers import SentenceTransformer
+
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import LancasterStemmer
@@ -84,7 +85,7 @@ DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
 
 def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
-    # 1. Automatically connect or initialize the SQLite table mapping for this user ID
+    # 1. Automatically connect or initialize the SQLite table mapping for this user ID (get chat_history corresponding to a specific user)
     chat_history_db = SQLChatMessageHistory(
         session_id=session_id,
         connection=DB_CONNECTION_STRING

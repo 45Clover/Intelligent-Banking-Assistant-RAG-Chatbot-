@@ -23,12 +23,6 @@ app.add_middleware(
 
 banking_bot = initialize_llm_interface()
 
-# mock_rag_context = (
-#     "Document: rbi_savings_policy.pdf (Page 3)\n"
-#     "The minimum initial deposit required to open a Student Savings Account is $50. "
-#     "Account holders receive an introductory rate of 3.0% APY.\n"
-# )
-
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
 chroma_client = chromadb.PersistentClient(path="Chunking/chroma_db")
 collection = chroma_client.get_collection(name="banking_kb")
@@ -47,8 +41,8 @@ async def init_chat():
     guest_id = f"guest_{uuid.uuid4().hex[:10]}"
     payload = {
         "sub": guest_id,
-        "iat": datetime.datetime.utcnow(),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45)
+        "iat": datetime.timezone.utc() #token is permanent
+        # "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"token": token}
