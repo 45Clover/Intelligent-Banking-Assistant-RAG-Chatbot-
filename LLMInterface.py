@@ -130,7 +130,7 @@ def generate_anonymous_token():
     return token
 
 
-# --- Execution ---
+# --- Execution Test ---
 if __name__ == "__main__":
     print("Initializing structured local LLM interface layer...")
     banking_bot = initialize_llm_interface()

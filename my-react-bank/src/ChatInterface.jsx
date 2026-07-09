@@ -7,6 +7,7 @@ function ChatInterface() {
   const [visibleSourcesIndex, setVisibleSourcesIndex] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Track server loading state
   const scrollRef = useRef(null);
+  const TypicalBorderRadius = "12px"; // standard border radius for chat bubbles
 
   // --- STEP 3 MODIFICATION: INITIALIZE ANONYMOUS GUEST SESSION ON LAUNCH ---
   useEffect(() => {
@@ -226,7 +227,7 @@ function ChatInterface() {
           className="d-flex align-items-stretch"
           style={{ width: "100%"}}
         >
-          <textarea
+          <textarea  //Human Query text box
             className="form-control flex-grow-1"
             id="humanInput"
             rows="1"
@@ -237,8 +238,9 @@ function ChatInterface() {
             style={{
               width: "700px",
               resize: "none",
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
+              borderRadius: TypicalBorderRadius,
+              // borderTopRightRadius: 0,
+              // borderBottomRightRadius: 0,
             }}
           />
 
@@ -247,8 +249,7 @@ function ChatInterface() {
             className="btn btn-primary"
             disabled={isLoading}
             style={{
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
+              borderRadius: TypicalBorderRadius,
               width: "90px",
               height: "100%",
               transform: "translateY(-6px)"
