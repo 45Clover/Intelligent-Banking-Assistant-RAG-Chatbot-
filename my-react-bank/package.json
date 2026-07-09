@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "backend": "cd .. && python -u -m uvicorn server:app --port 8000",
+    "dev:all": "concurrently -n REACT,API -c blue,green \"npm run dev\" \"npm run backend\""
+
   },
   "dependencies": {
     "react": "^19.2.7",
@@ -17,6 +20,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.3",
     "oxlint": "^1.71.0",
     "vite": "^8.1.1"
   }

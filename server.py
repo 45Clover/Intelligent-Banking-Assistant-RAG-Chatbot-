@@ -1,5 +1,6 @@
 import uuid
 import datetime
+import time
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,40 +9,42 @@ import jwt
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-# Import the logic you already created in your prior scripts
 from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+t0 = time.time()
 banking_bot = initialize_llm_interface()
+print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
-# mock_rag_context = (
-#     "Document: rbi_savings_policy.pdf (Page 3)\n"
-#     "The minimum initial deposit required to open a Student Savings Account is $50. "
-#     "Account holders receive an introductory rate of 3.0% APY.\n"
-# )
-
+t1 = time.time()
 embedder = SentenceTransformer("all-MiniLM-L6-v2")
+print(f"[STARTUP] SentenceTransformer load: {time.time() - t1:.2f}s", flush=True)
+
+t2 = time.time()
 chroma_client = chromadb.PersistentClient(path="Chunking/chroma_db")
 collection = chroma_client.get_collection(name="banking_kb")
-current_session = generate_anonymous_token()
+print(f"[STARTUP] Chroma client + collection: {time.time() - t2:.2f}s", flush=True)
 
+t3 = time.time()
+current_session = generate_anonymous_token()
+print(f"[STARTUP] generate_anonymous_token: {time.time() - t3:.2f}s", flush=True)
 
 
 class ChatPayload(BaseModel):
     user_query: str
 
-SECRET_KEY = "your-bank-super-secret-key" #place holder
+SECRET_KEY = "your-bank-super-secret-key"
 
-# === FIX 1: ADD THIS MISSING ENDPOINT ===
+
 @app.get("/api/init-chat")
 async def init_chat():
     guest_id = f"guest_{uuid.uuid4().hex[:10]}"
@@ -53,17 +56,21 @@ async def init_chat():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"token": token}
 
+
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
-        
+
     try:
         token = authorization.split(" ")[1]
         decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         existing_guest_id = decoded_payload["sub"]
-        
+
+        t0 = time.time()
         rag_context = retrieve_context(payload.user_query, embedder, collection, top_k=3)
+        t1 = time.time()
+        print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
 
         out = process_user_turn_with_sqlite(
             session_id=existing_guest_id,
@@ -71,18 +78,17 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
             banking_bot_chain=banking_bot,
             rag_context=rag_context
         )
-        
-        # === FIX 2: ENSURE FRONTEND EXPECTED KEYS ARE EXPLICITLY RETURNED ===
+        t2 = time.time()
+        print(f"[TIMING] process_user_turn_with_sqlite: {t2 - t1:.2f}s")
+        print(f"[TIMING] TOTAL: {t2 - t0:.2f}s")
+
         return {
             "response": out.get("response", "No response generated."),
             "confidence_score": out.get("confidence_score", 0.0),
             "sources": out.get("sources", ["Mock Document Context Layer"])
         }
-        
+
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-    
-#first cd to the repo (for Chris) and then run what is below
-#python -m uvicorn server:app --reload --port 8000

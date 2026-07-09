@@ -7,15 +7,16 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 
 import chromadb
+
+import os
+os.environ["HF_HUB_OFFLINE"] = "1" #trying to make it faster
 from sentence_transformers import SentenceTransformer
-import nltk
-from nltk.corpus import stopwords
-from nltk.stem import LancasterStemmer
-from nltk.tokenize import word_tokenize
+
 
 import jwt
 import datetime
 import uuid
+import time
 
 
 # 1. Define the Structured JSON Schema using Pydantic
@@ -84,25 +85,31 @@ DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
 
 def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
-    # 1. Automatically connect or initialize the SQLite table mapping for this user ID
+    t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
         session_id=session_id,
         connection=DB_CONNECTION_STRING
     )
+    t1 = time.time()
+    print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s")
 
-    # 2. Extract their existing historical messages into a standard list format for your LLM chain
     past_messages = chat_history_db.messages
+    t2 = time.time()
+    print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")
 
-    # 3. Fire the query through your structured banking bot chain, passing the retrieved historical messages
     parsed_output = banking_bot_chain.invoke({
         "context": rag_context,
         "chat_history": past_messages,
         "user_query": current_query
     })
+    t3 = time.time()
+    print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
+    print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
 
-    # 4. Commit the new turn data directly into the database so it records permanently
     chat_history_db.add_user_message(current_query)
     chat_history_db.add_ai_message(parsed_output["response"])
+    t4 = time.time()
+    print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
 
     return parsed_output
 
