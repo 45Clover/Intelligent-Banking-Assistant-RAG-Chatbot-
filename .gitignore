@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+node_modules/
+Chunking/chroma_db/
+chat_history.db
