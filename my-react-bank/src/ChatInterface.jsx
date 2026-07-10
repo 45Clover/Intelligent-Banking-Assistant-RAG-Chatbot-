@@ -58,6 +58,10 @@ function ChatInterface() {
     recognition.interimResults = true; // stream partial results so the textbox updates live as the user talks
     recognition.lang = "en-US";
 
+    recognition.onstart = () => {
+      setIsListening(true); //Only set listening to true when browser successfully activates the mic
+    };
+
     // Fires repeatedly as speech is recognized (both interim and final chunks)
     recognition.onresult = (event) => {
       let transcript = "";
