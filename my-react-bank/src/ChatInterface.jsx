@@ -227,32 +227,32 @@ function ChatInterface() {
                         </div>
                       )}
 
-                      {visibleSourcesIndex === index && (
-                        <div className="mt-2 p-2 border rounded bg-light">
-                          <h6 className="mb-1">Source Documents</h6>
-                          <ul className="mb-0 ps-3">
-                            {message.sources.map((link, linkIndex) => (
-                              <li key={linkIndex}>
-                                {/* If sources are file titles instead of real URLs, display them as clean static text items */}
-                                <span className="text-secondary">{link}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    {visibleSourcesIndex === index && (
+                      <div className="mt-2 p-2 border rounded bg-light">
+                        <h6 className="mb-1">Source Documents</h6>
+                        <ul className="mb-0 ps-3">
+                          {message.sources.map((link, linkIndex) => (
+                            <li key={linkIndex}>
+                              {/* If sources are file titles instead of real URLs, display them as clean static text items */}
+                              <span className="text-secondary">{link}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            );
-          })}
-          {/* Visual Typing indicator block */}
-          {isLoading && (
-            <p className="text-muted text-start ps-2 small italic animate-pulse">
-              Assistant is consulting database...
-            </p>
-          )}
-        </div>
+            </div>
+          );
+        })}
+        {/* Visual Typing indicator block */}
+        {isLoading && (
+          <p className="text-muted text-start ps-2 small italic animate-pulse">
+            Assistant is consulting database...
+          </p>
+        )}
+      </div>
 
         <form onSubmit={handleSubmit} className="mt-3">
           <div

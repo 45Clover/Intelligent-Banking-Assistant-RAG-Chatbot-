@@ -68,7 +68,7 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context = retrieve_context(payload.user_query, embedder, collection, top_k=3)
+        rag_context , sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3)
         t1 = time.time()
         print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
 
@@ -85,7 +85,7 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         return {
             "response": out.get("response", "No response generated."),
             "confidence_score": out.get("confidence_score", 0.0),
-            "sources": out.get("sources", ["Mock Document Context Layer"])
+            "sources": sources
         }
 
     except jwt.ExpiredSignatureError:
