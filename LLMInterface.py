@@ -17,7 +17,31 @@ import jwt
 import datetime
 import uuid
 import time
+BANK_URLS = {
+    "sbi": "https://sbi.bank.in/web/customer-care/faq-s",
+    "hdfc": "https://www.hdfc.bank.in/faqs",
+    "wellsfargo": "https://www.wellsfargo.com/help/",
+    "rbi": "https://www.rbi.org.in/Scripts/publications.aspx"
+}
 
+def detect_bank_from_filename(filename: str) -> str:
+    name = filename.lower()
+    if "wells" in name:
+        return "wellsfargo"
+    elif "hdfc" in name:
+        return "hdfc"
+    elif "sbi" in name:
+        return "sbi"
+    elif "reserve bank" in name or "rbi" in name:
+        return "rbi"
+    else:
+        return "sbi"  # default fallback for generic/unlabeled FAQ files
+
+def get_source_url(filename: str, category: str) -> str:
+    if category == "policy":
+        return BANK_URLS["rbi"]
+    bank = detect_bank_from_filename(filename)
+    return BANK_URLS.get(bank, BANK_URLS["sbi"])
 
 # 1. Define the Structured JSON Schema using Pydantic
 class BankingBotResponse(BaseModel):
@@ -40,13 +64,22 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
     chunks = results["documents"][0]
     metadatas = results["metadatas"][0]
 
+
     context_parts = []
+    sources = []
     for chunk, meta in zip(chunks, metadatas):
         source = meta.get("source_file", "unknown")
         category = meta.get("category", "unknown")
         context_parts.append(f"Document: {source} ({category})\n{chunk}")
 
-    return "\n\n".join(context_parts)
+        url = get_source_url(source, category)
+        sources.append({
+            "name": source,
+            "url": url
+        })
+
+    context = "\n\n".join(context_parts)
+    return context, sources
 
 
 def initialize_llm_interface():
@@ -163,7 +196,8 @@ if __name__ == "__main__":
         if user_query == "":
             user_query = " "  # to avoid errors in the LLM chain if user presses enter without typing anything
 
-        rag_context = retrieve_context(user_query, embedder, collection, top_k=3)
+        rag_context, _ = retrieve_context(user_query, embedder, collection, top_k=3)
+
         out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, rag_context)
         print(f"\n[{current_session}] Response: \n{out['response']}")
 

@@ -218,10 +218,15 @@ function ChatInterface() {
                       <div className="mt-2 p-2 border rounded bg-light">
                         <h6 className="mb-1">Source Documents</h6>
                         <ul className="mb-0 ps-3">
-                          {message.sources.map((link, linkIndex) => (
+                          {message.sources.map((src, linkIndex) => (
                             <li key={linkIndex}>
-                              {/* If sources are file titles instead of real URLs, display them as clean static text items */}
-                              <span className="text-secondary">{link}</span>
+                              {src.url ? (
+                                <a href={src.url} target="_blank" rel="noopener noreferrer">
+                                  {src.name}
+                                </a>
+                              ) : (
+                                <span className="text-secondary">{src.name}</span>
+                              )}
                             </li>
                           ))}
                         </ul>
