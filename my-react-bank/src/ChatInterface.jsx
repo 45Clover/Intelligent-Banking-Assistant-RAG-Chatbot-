@@ -7,6 +7,7 @@ function ChatInterface() {
   const [visibleSourcesIndex, setVisibleSourcesIndex] = useState(null);
   const [isLoading, setIsLoading] = useState(false); // Track server loading state
   const scrollRef = useRef(null);
+  const TypicalBorderRadius = "12px"; // standard border radius for chat bubbles
 
   // --- STEP 3 MODIFICATION: INITIALIZE ANONYMOUS GUEST SESSION ON LAUNCH ---
   useEffect(() => {
@@ -64,7 +65,7 @@ function ChatInterface() {
     };
 
     const fetchNewToken = async () => {
-      const initResponse = await fetch("http://localhost:8000/api/init-chat");
+      const initResponse = await fetch("http://localhost:8000/api/init-chat");  // localhost:8000 is the default address where the Python FastAPI (from server.py) server runs
       if (!initResponse.ok) {
         throw new Error("Failed to fetch a new session token");
       }
@@ -183,8 +184,9 @@ function ChatInterface() {
                         Confidence: {message.confidence ? message.confidence.toFixed(2) : "0.00"}
                       </small>
                       <button
-                        className="btn btn-sm btn-outline-secondary"
+                        className="btn btn-sm btn-outline-secondary" //For the options button on the AI response
                         onClick={() => toggleMenu(index)}
+                        style = {{borderRadius: TypicalBorderRadius}}
                         aria-haspopup="true"
                         aria-expanded={openMenuIndex === index}
                       >
@@ -246,7 +248,7 @@ function ChatInterface() {
           className="d-flex align-items-stretch"
           style={{ width: "100%"}}
         >
-          <textarea
+          <textarea //for the text box where you enter user query
             className="form-control flex-grow-1"
             id="humanInput"
             rows="1"
@@ -257,18 +259,20 @@ function ChatInterface() {
             style={{
               width: "700px",
               resize: "none",
-              borderTopRightRadius: 0,
-              borderBottomRightRadius: 0,
+              borderRadius: TypicalBorderRadius
+              // borderTopRightRadius: 0,
+              // borderBottomRightRadius: 0,
             }}
           />
 
           <button
-            type="submit"
+            type="submit" //for the send button
             className="btn btn-primary"
             disabled={isLoading}
             style={{
-              borderTopLeftRadius: 0,
-              borderBottomLeftRadius: 0,
+              borderRadius: TypicalBorderRadius,
+              // borderTopLeftRadius: 0,
+              // borderBottomLeftRadius: 0,
               width: "90px",
               height: "100%",
               transform: "translateY(-6px)"
