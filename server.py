@@ -21,8 +21,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#testing run time of the LLM interface
 t0 = time.time()
-banking_bot = initialize_llm_interface()
+banking_bot = initialize_llm_interface() #get the LLM chain initialized and ready to process user queries
 print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
 t1 = time.time()
@@ -68,15 +69,15 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context , sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3)
+        rag_context , sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3) #identify the user to get their specific chat history
         t1 = time.time()
         print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
 
-        out = process_user_turn_with_sqlite(
-            session_id=existing_guest_id,
-            current_query=payload.user_query,
-            banking_bot_chain=banking_bot,
-            rag_context=rag_context
+        out = process_user_turn_with_sqlite( #invoke the LLM chain to get the response
+            session_id=existing_guest_id, #we want the output to tied to a specific user
+            current_query=payload.user_query, #input user query
+            banking_bot_chain=banking_bot, #input the initialized LLM chain
+            rag_context=rag_context #input the retrieved context
         )
         t2 = time.time()
         print(f"[TIMING] process_user_turn_with_sqlite: {t2 - t1:.2f}s")

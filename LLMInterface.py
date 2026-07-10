@@ -84,7 +84,7 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
 
 def initialize_llm_interface():
     # Connect to local Llama 3.2 model
-    llm = ChatOllama(model="llama3.2", temperature=0.2)  # 0 temperature for deterministic output
+    llm = ChatOllama(model="llama3.2", temperature=0.2, format = "json")  # low temperature for deterministic output
 
     # Initialize the output parser tied to our structure template
     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
@@ -124,17 +124,17 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         connection=DB_CONNECTION_STRING
     )
     t1 = time.time()
-    print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s")
+    print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s") #Test Run time
 
     past_messages = chat_history_db.messages
     t2 = time.time()
-    print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")
-
+    print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s") #Test Run Time
+ 
     try:
-        parsed_output = banking_bot_chain.invoke({
-            "context": rag_context,
-            "chat_history": past_messages,
-            "user_query": current_query
+        parsed_output = banking_bot_chain.invoke({ #gets the LLM response
+            "context": rag_context, #input context
+            "chat_history": past_messages, #input chat history
+            "user_query": current_query #input user query
         })
     except Exception as e:
         print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
@@ -164,11 +164,10 @@ def generate_anonymous_token():
     # Create a completely random user ID
     guest_id = f"guest_{uuid.uuid4().hex[:10]}"
 
-    # Define payload with an expiration (45 minutes)
     payload = {
         "sub": guest_id,
         "iat": datetime.datetime.utcnow(),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45),
+        # "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45), adds expiration date
         "role": "anonymous_guest"
     }
 
@@ -176,7 +175,7 @@ def generate_anonymous_token():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return token
 
-runTest = False #set to true if you want to test the LLM interface locally without running the FastAPI server.
+runTest = True #set to true if you want to test the LLM interface locally without running the FastAPI server.
 # --- Test Execution ---
 if __name__ == "__main__" and runTest == True:
     print("Initializing structured local LLM interface layer...")
@@ -188,7 +187,7 @@ if __name__ == "__main__" and runTest == True:
     collection = chroma_client.get_collection(name="banking_kb")
     current_session = generate_anonymous_token()
 
-    print(f"Generated Anonymous Session Token: {current_session}\n")
+    print(f"\nGenerated Anonymous Session Token: {current_session}\n")
 
     while True:
         print("User Input: ")
