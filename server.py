@@ -51,7 +51,7 @@ async def init_chat():
     payload = {
         "sub": guest_id,
         "iat": datetime.datetime.utcnow(),
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45)
+        #"exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=45) only add for expiration
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return {"token": token}
@@ -92,3 +92,6 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+
+#python -m uvicorn server:app --reload --port 8000
