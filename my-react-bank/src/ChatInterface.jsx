@@ -9,6 +9,12 @@ function ChatInterface() {
   const scrollRef = useRef(null);
   const TypicalBorderRadius = "12px"; // standard border radius for chat bubbles
 
+  // --- VOICE FEATURE ADDITIONS: STATE ---
+  const [isListening, setIsListening] = useState(false); // true while the mic is actively capturing speech
+  const [voiceOutputEnabled, setVoiceOutputEnabled] = useState(false); // toggles auto-reading AI responses aloud
+  const [speechSupported, setSpeechSupported] = useState(true); // whether this browser supports SpeechRecognition
+  const recognitionRef = useRef(null); // holds the single SpeechRecognition instance across renders
+
   // --- STEP 3 MODIFICATION: INITIALIZE ANONYMOUS GUEST SESSION ON LAUNCH ---
   useEffect(() => {
     const initializeSession = async () => {
@@ -34,6 +40,85 @@ function ChatInterface() {
 
     initializeSession();
   }, []);
+
+  // --- VOICE FEATURE ADDITIONS: SET UP SPEECH RECOGNITION (VOICE -> TEXT) ONCE ON MOUNT ---
+  useEffect(() => {
+    // Chrome/Edge expose this under the "webkit" prefix, some browsers don't support it at all
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) {
+      // No voice input support in this browser (e.g. Firefox) - hide mic UI gracefully
+      console.warn("SpeechRecognition API not supported in this browser. Voice input disabled.");
+      setSpeechSupported(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false; // stop automatically after the user pauses speaking
+    recognition.interimResults = true; // stream partial results so the textbox updates live as the user talks
+    recognition.lang = "en-US";
+
+    recognition.onstart = () => {
+      setIsListening(true); //Only set listening to true when browser successfully activates the mic
+    };
+
+    // Fires repeatedly as speech is recognized (both interim and final chunks)
+    recognition.onresult = (event) => {
+      let transcript = "";
+      for (let i = 0; i < event.results.length; i++) {
+        transcript += event.results[i][0].transcript;
+      }
+      setUserInput(transcript); // mirror the spoken words into the existing text box, reusing the normal submit flow
+    };
+
+    // Fires on any recognition error (e.g. no mic permission, no speech detected)
+    recognition.onerror = (event) => {
+      console.error("SpeechRecognition error:", event.error);
+      setIsListening(false);
+    };
+
+    // Fires when the recognition session ends (either naturally or via .stop())
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    // Cleanup: abort any in-progress recognition if the component unmounts
+    return () => {
+      recognition.abort();
+    };
+  }, []);
+
+  // --- VOICE FEATURE ADDITIONS: MIC BUTTON HANDLER (STARTS/STOPS LISTENING) ---
+  const handleMicToggle = () => {
+    const recognition = recognitionRef.current;
+    if (!recognition || isLoading) return;
+
+    if (isListening) {
+      recognition.stop(); // user clicked the mic again to manually stop
+      setIsListening(false);
+    } else {
+      setUserInput(''); // clear old text so the fresh transcript doesn't append onto stale input
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (err) {
+        // start() throws if recognition is already running - safe to ignore
+        console.error("Could not start SpeechRecognition:", err);
+      }
+    }
+  };
+
+  // --- VOICE FEATURE ADDITIONS: TEXT -> SPEECH PLAYBACK FOR AI RESPONSES ---
+  const speakText = (text) => {
+    if (!window.speechSynthesis || !text) return;
+
+    window.speechSynthesis.cancel(); // stop any currently playing speech before starting new speech
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    window.speechSynthesis.speak(utterance);
+  };
 
   const handleInputChange = (event) => {
     setUserInput(event.target.value);
@@ -106,6 +191,11 @@ function ChatInterface() {
           sources: data.sources || [],
         },
       ]);
+
+      // --- VOICE FEATURE ADDITION: SPEAK THE RESPONSE OUT LOUD IF ENABLED ---
+      if (voiceOutputEnabled) {
+        speakText(data.response);
+      }
     } catch (error) {
       console.error("Failed to fetch real LLM response:", error);
 
@@ -147,6 +237,7 @@ function ChatInterface() {
   }, [chatHistory, isLoading]);
 
   return (
+<<<<<<< HEAD
     <div 
       className="d-flex justify-content-center align-items-center w-100" 
       // Forces the parent container to take up the full height of the viewport and centers its child horizontally and vertically
@@ -157,6 +248,32 @@ function ChatInterface() {
         <h1 style={{ fontFamily: "Titillium Web" }} className="text-center mb-3">
           Intelligent Banking Assistant UI
         </h1>
+=======
+    <div className="container mt-5" style={{ maxWidth: '800px' }}>
+      <div className="d-flex align-items-center justify-content-between">
+        <h1>Intelligent Banking Assistant UI</h1>
+        {/* VOICE FEATURE ADDITION: master toggle for auto-reading AI responses aloud */}
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            role="switch"
+            id="voiceOutputToggle"
+            checked={voiceOutputEnabled}
+            onChange={() => {
+              // Turning it off mid-speech should also stop whatever is currently playing
+              if (voiceOutputEnabled) {
+                window.speechSynthesis && window.speechSynthesis.cancel();
+              }
+              setVoiceOutputEnabled((prev) => !prev);
+            }}
+          />
+          <label className="form-check-label small text-muted" htmlFor="voiceOutputToggle">
+            🔊 Voice replies
+          </label>
+        </div>
+      </div>
+>>>>>>> VoiceInputOutput
 
         <div
           ref={scrollRef}
@@ -201,6 +318,16 @@ function ChatInterface() {
                           aria-expanded={openMenuIndex === index}
                         >
                           Options &#9662;
+                        </button>
+                        {/* VOICE FEATURE ADDITION: replay this specific response with text-to-speech */}
+                        <button
+                          className="btn btn-sm btn-light w-100 text-start rounded-0"
+                          onClick={() => {
+                            speakText(message.text);
+                            setOpenMenuIndex(null);
+                          }}
+                        >
+                          🔊 Read Aloud
                         </button>
                       </div>
 
@@ -252,12 +379,74 @@ function ChatInterface() {
             Assistant is consulting database...
           </p>
         )}
+        {/* VOICE FEATURE ADDITION: Visual listening indicator block, mirrors the typing indicator above */}
+        {isListening && (
+          <p className="text-danger text-start ps-2 small italic animate-pulse">
+            🎤 Listening... speak now
+          </p>
+        )}
       </div>
 
+<<<<<<< HEAD
         <form onSubmit={handleSubmit} className="mt-3">
           <div
             className="d-flex align-items-stretch"
             style={{ width: "100%"}}
+=======
+      <form onSubmit={handleSubmit} className="mt-3">
+        <div
+          className="d-flex align-items-stretch"
+          style={{ width: "100%"}}
+        >
+          <textarea //for the text box where you enter user query
+            className="form-control flex-grow-1"
+            id="humanInput"
+            rows="1"
+            value={userInput}
+            onChange={handleInputChange}
+            placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
+            disabled={isLoading} // Lock entry area during network call
+            style={{
+              width: "700px",
+              resize: "none",
+              borderRadius: TypicalBorderRadius
+              // borderTopRightRadius: 0,
+              // borderBottomRightRadius: 0,
+            }}
+          />
+
+          {/* VOICE FEATURE ADDITION: mic button - click to start/stop dictating the query by voice */}
+          {speechSupported && (
+            <button
+              type="button" // not a submit button - this only toggles listening, it doesn't send the message
+              className={`btn ${isListening ? 'btn-danger' : 'btn-outline-secondary'} mx-1`}
+              onClick={handleMicToggle}
+              disabled={isLoading}
+              title={isListening ? "Stop listening" : "Speak your query"}
+              style={{
+                borderRadius: TypicalBorderRadius,
+                width: "50px",
+                height: "100%",
+                transform: "translateY(-6px)"
+              }}
+            >
+              {isListening ? '⏹️' : '🎤'}
+            </button>
+          )}
+
+          <button
+            type="submit" //for the send button
+            className="btn btn-primary"
+            disabled={isLoading}
+            style={{
+              borderRadius: TypicalBorderRadius,
+              // borderTopLeftRadius: 0,
+              // borderBottomLeftRadius: 0,
+              width: "90px",
+              height: "100%",
+              transform: "translateY(-6px)"
+            }}
+>>>>>>> VoiceInputOutput
           >
             <textarea //for the text box where you enter user query
               className="form-control flex-grow-1"
