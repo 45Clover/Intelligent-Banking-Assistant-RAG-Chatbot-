@@ -446,7 +446,6 @@ function ChatInterface() {
               height: "100%",
               transform: "translateY(-6px)"
             }}
->>>>>>> VoiceInputOutput
           >
             <textarea //for the text box where you enter user query
               className="form-control flex-grow-1"
