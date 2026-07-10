@@ -143,9 +143,9 @@ def generate_anonymous_token():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return token
 
-
-# --- Execution ---
-if __name__ == "__main__":
+runTest = False #set to true if you want to test the LLM interface locally without running the FastAPI server.
+# --- Test Execution ---
+if __name__ == "__main__" and runTest == True:
     print("Initializing structured local LLM interface layer...")
     banking_bot = initialize_llm_interface()
     memory_buffer = []
