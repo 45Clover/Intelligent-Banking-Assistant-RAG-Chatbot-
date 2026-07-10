@@ -15,7 +15,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["http://localhost:5173"], # Or ["*"] to allow everything for local dev
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,6 +50,8 @@ async def init_chat():
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
+        if authorization != None: print(authorization)
+        else: print(authorization)
         raise HTTPException(status_code=401, detail="Missing or invalid token")
         
     try:
@@ -80,3 +82,4 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
     
 #first cd to the repo (for Chris) and then run what is below
 #python -m uvicorn server:app --reload --port 8000
+#ctrl + c to stop server.py

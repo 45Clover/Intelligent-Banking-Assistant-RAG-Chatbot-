@@ -20,7 +20,7 @@ function ChatInterface() {
       } else {
         // Validation check: Make sure the server actually accepts our saved token
         try {
-          const checkResponse = await fetch("http://localhost:8000/api/chat", {
+          const checkResponse = await fetch("http://localhost:8000/api/chat", { //This section of code is explain on [line 87]
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -85,12 +85,15 @@ function ChatInterface() {
 
       // 2. Fire the network request payload to the Python FastAPI web server
       const response = await fetch("http://localhost:8000/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${savedToken || ""}` // Securely attach the JWT
+        // localhost:8000 is the default address where the Python FastAPI (from server.py) server runs
+        method: "POST", // indicates information is being sent to the server
+        headers: { 
+          "Content-Type": "application/json", //formatted as JSON
+          "Authorization": `Bearer ${savedToken || ""}` // Securely attach the JWT (security layer) [authorization argument]
         },
-        body: JSON.stringify({ user_query: currentQuery }),
+        body: JSON.stringify({ user_query: currentQuery }), // 
+        // actually sends the user_query input as JSON format to the back-end (server.py)
+        // This is what's actually passed as an argument for the chat_endpoint in server.py, which will then call the LLMInterface.py to process the query
       });
 
       if (!response.ok) {
@@ -118,7 +121,7 @@ function ChatInterface() {
         ...prev,
         {
           role: 'ai',
-          text: "System Error: Unable to establish connection with the secure banking backend pipeline.",
+          text: `System Error: Unable to establish connection with the secure banking backend pipeline. ${error.message}`,
           confidence: 0,
           sources: ["Network Firewall / Offline Connection Error"],
         },
@@ -269,7 +272,7 @@ function ChatInterface() {
             }}
           />
 
-          <button
+          <button  //Send message button
             type="submit"
             className="btn btn-primary"
             disabled={isLoading}
