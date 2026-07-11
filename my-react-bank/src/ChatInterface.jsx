@@ -237,18 +237,6 @@ function ChatInterface() {
   }, [chatHistory, isLoading]);
 
   return (
-<<<<<<< HEAD
-    <div 
-      className="d-flex justify-content-center align-items-center w-100" 
-      // Forces the parent container to take up the full height of the viewport and centers its child horizontally and vertically
-      style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }} 
-    >
-      <div className="container" style={{ maxWidth: "800px", width: "100%" }}>
-        {/* text-center balances the title nicely directly above the newly centered chat wrapper */}
-        <h1 style={{ fontFamily: "Titillium Web" }} className="text-center mb-3">
-          Intelligent Banking Assistant UI
-        </h1>
-=======
     <div className="container mt-5" style={{ maxWidth: '800px' }}>
       <div className="d-flex align-items-center justify-content-between">
         <h1>Intelligent Banking Assistant UI</h1>
@@ -273,51 +261,69 @@ function ChatInterface() {
           </label>
         </div>
       </div>
->>>>>>> VoiceInputOutput
 
-        <div
-          ref={scrollRef}
-          className="border rounded p-3 mt-4"
-          style={{ height: '480px', overflowY: 'auto', backgroundColor: '#e0effb' , borderRadius: TypicalBorderRadius}}
-        >
-          {chatHistory.length === 0 && (
-            <p className="text-muted text-center mt-5">
-              Your secure conversation will appear here. Ask a query regarding bank policies or internet setups.
-            </p>
-          )}
+      <div
+        ref={scrollRef}
+        className="border rounded p-3 mt-4"
+        style={{ height: '480px', overflowY: 'auto', backgroundColor: '#e0effb' }}
+      >
+        {chatHistory.length === 0 && (
+          <p className="text-muted text-center mt-5">
+            Your secure conversation will appear here. Ask a query regarding bank policies or internet setups.
+          </p>
+        )}
 
-          {chatHistory.map((message, index) => {
-            const isUser = message.role === 'user';
-            return (
-              <div
-                key={index}
-                // Dynamic flex alignment flips the bubble position depending on whether it's a human or AI message
-                className={`d-flex mb-3 ${isUser ? 'justify-content-end' : 'justify-content-start'}`}
-              >
-                <div style={{ maxWidth: '75%' }}>
-                  <div
-                    className={`p-2 rounded ${
-                      isUser ? 'bg-primary text-white' : 'bg-white border'
-                    }`}
-                    style={{ borderRadius: TypicalBorderRadius }}
-                  >
-                    {message.text}
-                  </div>
+        {chatHistory.map((message, index) => {
+          const isUser = message.role === 'user';
+          return (
+            <div
+              key={index}
+              className={`d-flex mb-3 ${isUser ? 'justify-content-end' : 'justify-content-start'}`}
+            >
+              <div style={{ maxWidth: '75%' }}>
+                <div
+                  className={`p-2 rounded ${
+                    isUser ? 'bg-primary text-white' : 'bg-white border'
+                  }`}
+                >
+                  {message.text}
+                </div>
 
-                  {!isUser && (
-                    <div className="mt-1 position-relative">
-                      <div className="d-flex align-items-center justify-content-between">
-                        <small className="text-muted">
-                          Confidence: {message.confidence ? message.confidence.toFixed(2) : "0.00"}
-                        </small>
+                {!isUser && (
+                  <div className="mt-1 position-relative">
+                    <div className="d-flex align-items-center justify-content-between">
+                      <small className="text-muted">
+                        Confidence: {message.confidence ? message.confidence.toFixed(2) : "0.00"}
+                      </small>
+                      <button
+                        className="btn btn-sm btn-outline-secondary" //For the options button on the AI response
+                        onClick={() => toggleMenu(index)}
+                        style = {{borderRadius: TypicalBorderRadius}}
+                        aria-haspopup="true"
+                        aria-expanded={openMenuIndex === index}
+                      >
+                        Options &#9662;
+                      </button>
+                    </div>
+
+                    {openMenuIndex === index && (
+                      <div
+                        className="border rounded bg-white shadow-sm mt-1 position-absolute"
+                        style={{ right: 0, zIndex: 10, minWidth: '200px' }}
+                      >
                         <button
-                          className="btn btn-sm btn-outline-secondary" //For the options button on the AI response
-                          onClick={() => toggleMenu(index)}
-                          style = {{borderRadius: TypicalBorderRadius}}
-                          aria-haspopup="true"
-                          aria-expanded={openMenuIndex === index}
+                          className="btn btn-sm btn-warning w-100 text-start rounded-0"
+                          onClick={() => handleEscalate(index)}
                         >
-                          Options &#9662;
+                          Escalate to Human
+                        </button>
+                        <button
+                          className="btn btn-sm btn-light w-100 text-start rounded-0"
+                          onClick={() => toggleSources(index)}
+                        >
+                          {visibleSourcesIndex === index
+                            ? 'Hide Source Documents'
+                            : 'Show Source Documents'}
                         </button>
                         {/* VOICE FEATURE ADDITION: replay this specific response with text-to-speech */}
                         <button
@@ -330,29 +336,7 @@ function ChatInterface() {
                           🔊 Read Aloud
                         </button>
                       </div>
-
-                      {openMenuIndex === index && (
-                        <div
-                          className="border rounded bg-white shadow-sm mt-1 position-absolute"
-                          // position-absolute together with right: 0 ensures the dropdown scales downwards without throwing off the chat bubble widths below it
-                          style={{ right: 0, zIndex: 10, minWidth: '200px' }}
-                        >
-                          <button
-                            className="btn btn-sm btn-warning w-100 text-start rounded-0"
-                            onClick={() => handleEscalate(index)}
-                          >
-                            Escalate to Human
-                          </button>
-                          <button
-                            className="btn btn-sm btn-light w-100 text-start rounded-0"
-                            onClick={() => toggleSources(index)}
-                          >
-                            {visibleSourcesIndex === index
-                              ? 'Hide Source Documents'
-                              : 'Show Source Documents'}
-                          </button>
-                        </div>
-                      )}
+                    )}
 
                     {visibleSourcesIndex === index && (
                       <div className="mt-2 p-2 border rounded bg-light">
@@ -387,12 +371,6 @@ function ChatInterface() {
         )}
       </div>
 
-<<<<<<< HEAD
-        <form onSubmit={handleSubmit} className="mt-3">
-          <div
-            className="d-flex align-items-stretch"
-            style={{ width: "100%"}}
-=======
       <form onSubmit={handleSubmit} className="mt-3">
         <div
           className="d-flex align-items-stretch"
@@ -447,42 +425,11 @@ function ChatInterface() {
               transform: "translateY(-6px)"
             }}
           >
-            <textarea //for the text box where you enter user query
-              className="form-control flex-grow-1"
-              id="humanInput"
-              rows="1"
-              value={userInput}
-              onChange={handleInputChange}
-              placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
-              disabled={isLoading} // Lock entry area during network call
-              style={{
-                width: "700px",
-                resize: "none",
-                borderRadius: TypicalBorderRadius
-                // borderTopRightRadius: 0,
-                // borderBottomRightRadius: 0,
-              }}
-            />
+            Send
+          </button>
+        </div>
+      </form>
 
-            <button
-              type="submit" //for the send button
-              className="btn btn-primary"
-              disabled={isLoading}
-              // New Annotation: Counteracts default flex container stretching behaviors to keep the alignment pristine
-              style={{
-                borderRadius: TypicalBorderRadius,
-                // borderTopLeftRadius: 0,
-                // borderBottomLeftRadius: 0,
-                width: "90px",
-                height: "100%",
-                transform: "translateY(-6px)"
-              }}
-            >
-              Send
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

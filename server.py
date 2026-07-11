@@ -69,7 +69,8 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context , sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3) #identify the user to get their specific chat history
+        rag_context, sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3) #identify the user to get their specific chat history
+        #seperate chat history from rag context in this function
         t1 = time.time()
         print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
 
