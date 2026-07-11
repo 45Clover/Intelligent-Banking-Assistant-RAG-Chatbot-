@@ -348,15 +348,36 @@ function ChatInterface() {
 
                     {visibleSourcesIndex === index && (
                       <div className="mt-2 p-2 border rounded bg-light">
-                        <h6 className="mb-1">Source Documents</h6>
-                        <ul className="mb-0 ps-3">
-                          {message.sources.map((link, linkIndex) => (
-                            <li key={linkIndex}>
-                              {/* If sources are file titles instead of real URLs, display them as clean static text items */}
-                              <span className="text-secondary">{link}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <h6 className="mb-2 text-dark font-weight-bold">Source Documents</h6>
+                        <div className="d-flex flex-wrap gap-2">
+                          {message.sources && message.sources.length > 0 ? (
+                            message.sources.map((sourceItem, linkIndex) => {
+                              // If it's an error fallback string rather than an object
+                              if (typeof sourceItem === 'string') {
+                                return (
+                                  <span key={linkIndex} className="badge bg-secondary text-wrap p-2 text-start d-block w-100">
+                                    {sourceItem}
+                                  </span>
+                                );
+                              }
+                              // Normal parsed object case
+                              return (
+                                <a
+                                  key={linkIndex}
+                                  href={sourceItem.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="btn btn-xs btn-outline-primary text-decoration-none text-start p-1 px-2 m-1 bg-white bubble-source"
+                                  style={{ borderRadius: "6px", fontSize: "0.75rem", display: "inline-block" }}
+                                >
+                                  📄 {sourceItem.name || "View Document Reference"}
+                                </a>
+                              );
+                            })
+                          ) : (
+                            <span className="text-muted small">No source documents cited.</span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -397,8 +418,6 @@ function ChatInterface() {
               width: "700px",
               resize: "none",
               borderRadius: TypicalBorderRadius
-              // borderTopRightRadius: 0,
-              // borderBottomRightRadius: 0,
             }}
           />
 
@@ -427,8 +446,6 @@ function ChatInterface() {
             disabled={isLoading}
             style={{
               borderRadius: TypicalBorderRadius,
-              // borderTopLeftRadius: 0,
-              // borderBottomLeftRadius: 0,
               width: "90px",
               height: "100%",
               transform: "translateY(-6px)"

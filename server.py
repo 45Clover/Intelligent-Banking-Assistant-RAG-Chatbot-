@@ -58,6 +58,17 @@ async def init_chat():
     return {"token": token}
 
 
+def triggerQuadrails(parsedOutput):
+    response = parsedOutput.get("response", "No response generated.")
+    confidenceScore = parsedOutput.get("confidence_score", 0.0)
+
+    if confidenceScore < 0.2 and response != "My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.":
+        #if the user has a low confidence score and the response is not already a warning, replace it with a warning message
+        response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
+    
+    return response, confidenceScore
+
+
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -84,10 +95,13 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         print(f"[TIMING] process_user_turn_with_sqlite: {t2 - t1:.2f}s")
         print(f"[TIMING] TOTAL: {t2 - t0:.2f}s")
 
+        quadrailedResponse, quadrailedConfidenceScore = triggerQuadrails(out)
+
         return {
-            "response": out.get("response", "No response generated."),
-            "confidence_score": out.get("confidence_score", 0.0),
-            "sources": sources
+            "response": quadrailedResponse,
+            "confidence_score": quadrailedConfidenceScore,
+            "sources": sources,
+            "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
 
     except jwt.ExpiredSignatureError:

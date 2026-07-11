@@ -12,6 +12,16 @@ import os
 os.environ["HF_HUB_OFFLINE"] = "1" #trying to make it faster
 from sentence_transformers import SentenceTransformer
 
+# import sqlite3
+
+# conn = sqlite3.connect("chat_history.db")
+# cursor = conn.cursor()
+
+# # See what tables exist
+# cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
+# print("From Sqlite: ",cursor.fetchall())
+
+import sqlite3  # used below for the user_profiles personalization table
 
 import jwt
 import datetime
@@ -99,7 +109,10 @@ def initialize_llm_interface():
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
             "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "Format your final output instructions:\n{format_instructions}\n\n"
+            "User Profile:\n{user_profile}\n\n"
             "Context Documents:\n{context}"
         )),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -117,6 +130,83 @@ def initialize_llm_interface():
 # Memory management for user sessions using SQLite
 DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
+# Personalization: user profile storage (preferred account type + recent past queries)
+# Reuses the same physical sqlite file as chat history, in its own table.
+PROFILE_DB_PATH = "chat_history.db"
+MAX_PAST_QUERIES = 5  # how many recent queries we keep for personalization context
+
+
+def _get_profile_db_connection():
+    conn = sqlite3.connect(PROFILE_DB_PATH)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS user_profiles (
+            session_id TEXT PRIMARY KEY,
+            preferred_account_type TEXT,
+            past_queries TEXT
+        )
+    """)
+    return conn
+
+
+def get_user_profile(session_id: str) -> dict:
+    # Returns the stored personalization profile for a session, or sensible defaults if none exists yet.
+    conn = _get_profile_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT preferred_account_type, past_queries FROM user_profiles WHERE session_id = ?",
+        (session_id,)
+    )
+    row = cursor.fetchone()
+    conn.close()
+
+    if row is None:
+        return {"preferred_account_type": None, "past_queries": []}
+
+    preferred_account_type, past_queries_json = row
+    past_queries = json.loads(past_queries_json) if past_queries_json else []
+    return {"preferred_account_type": preferred_account_type, "past_queries": past_queries}
+
+
+def update_user_profile(session_id: str, current_query: str, intent: str) -> dict:
+    # Updates preferred_account_type based on the classified intent of this turn,
+    # and appends current_query to the rolling window of past_queries.
+    profile = get_user_profile(session_id)
+
+    past_queries = profile["past_queries"] + [current_query]
+    past_queries = past_queries[-MAX_PAST_QUERIES:]  # keep only the most recent queries
+
+    preferred_account_type = profile["preferred_account_type"]
+    if intent == "account_inquiry":
+        preferred_account_type = "savings/checking account"
+    elif intent == "loan_inquiry":
+        preferred_account_type = "loan/mortgage account"
+    # if intent is "out_of_bounds", leave the existing preferred_account_type untouched
+
+    conn = _get_profile_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO user_profiles (session_id, preferred_account_type, past_queries)
+        VALUES (?, ?, ?)
+        ON CONFLICT(session_id) DO UPDATE SET
+            preferred_account_type = excluded.preferred_account_type,
+            past_queries = excluded.past_queries
+    """, (session_id, preferred_account_type, json.dumps(past_queries)))
+    conn.commit()
+    conn.close()
+
+    return {"preferred_account_type": preferred_account_type, "past_queries": past_queries}
+
+
+def format_profile_for_prompt(profile: dict) -> str:
+    # Turns the stored profile dict into a short block of text the system prompt can inject.
+    if not profile["preferred_account_type"] and not profile["past_queries"]:
+        return "No prior profile information available for this user yet."
+
+    preferred = profile["preferred_account_type"] or "unknown"
+    recent = "; ".join(profile["past_queries"]) if profile["past_queries"] else "none"
+    return f"Preferred account type: {preferred}\nRecent topics discussed: {recent}"
+###
+
 
 def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
 
@@ -131,12 +221,17 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     past_messages = chat_history_db.messages
     t2 = time.time()
     print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s") #Test Run Time
- 
+
+    # Fetch this session's personalization profile (preferred account type + recent past queries)
+    user_profile = get_user_profile(session_id)
+    formatted_profile = format_profile_for_prompt(user_profile)
+
     try:
         parsed_output = banking_bot_chain.invoke({ #gets the LLM response
             "context": rag_context, #input context
             "chat_history": past_messages, #input chat history
-            "user_query": current_query #input user query
+            "user_query": current_query, #input user query
+            "user_profile": formatted_profile #input personalization profile
         })
     except Exception as e:
         print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
@@ -152,6 +247,13 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     chat_history_db.add_ai_message(parsed_output["response"])
     t4 = time.time()
     print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
+
+    # Persist the updated personalization profile (preferred account type + rolling past queries) for next turn
+    updated_profile = update_user_profile(session_id, current_query, parsed_output.get("intent", "out_of_bounds"))
+    t5 = time.time()
+    print(f"[TIMING]   update user profile: {t5 - t4:.2f}s")
+
+    parsed_output["user_profile"] = updated_profile
 
     return parsed_output
 
