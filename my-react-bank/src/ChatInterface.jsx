@@ -124,8 +124,16 @@ function ChatInterface() {
     setUserInput(event.target.value);
   };
 
+  // --- NEW KEYBIND ENTER HANDLER ---
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault(); // Stop a new blank line from breaking layout inside the textarea
+      handleSubmit(event);    // Force form submission
+    }
+  };
+
   // --- STEP 3 MODIFICATION: CONVERT MOCK SUBMIT TO REAL ASYNC BACKEND CALL ---
- const handleSubmit = async (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!userInput.trim() || isLoading) return;
 
@@ -382,6 +390,7 @@ function ChatInterface() {
             rows="1"
             value={userInput}
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown} // <-- KEYBIND LINKED HERE
             placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
             disabled={isLoading} // Lock entry area during network call
             style={{

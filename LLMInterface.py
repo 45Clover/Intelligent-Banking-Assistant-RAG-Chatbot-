@@ -55,16 +55,17 @@ class BankingBotResponse(BaseModel):
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
 def retrieve_context(user_query, embedder, collection, top_k=3):
-    query_embedding = embedder.encode([user_query]).tolist()
-    results = collection.query(
+    query_embedding = embedder.encode([user_query]).tolist() #Converting Text to Numbers (Embedding)
+    results = collection.query( #Searching the Vector Database (Find documents that are similar to the embedded user query)
         query_embeddings=query_embedding,
         n_results=top_k
     )
 
-    chunks = results["documents"][0]
-    metadatas = results["metadatas"][0]
+    #Extracting Text and Metadata 
+    chunks = results["documents"][0] #The actual raw text blocks extracted from your bank PDFs/FAQs.
+    metadatas = results["metadatas"][0] #Accompanying key-value data about those blocks (like file name or category) that is saved during the ingestion phase.
 
-
+    #Iterating and Building the Context
     context_parts = []
     sources = []
     for chunk, meta in zip(chunks, metadatas):
@@ -118,6 +119,7 @@ DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
 
 def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
+
     t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
         session_id=session_id,
@@ -146,7 +148,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t3 = time.time()
     print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
-    chat_history_db.add_user_message(current_query)
+    chat_history_db.add_user_message(current_query) #add user query and LLM response to the SQLite database for future context [for the specific user session]
     chat_history_db.add_ai_message(parsed_output["response"])
     t4 = time.time()
     print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
