@@ -273,7 +273,7 @@ function ChatInterface() {
       <div
         ref={scrollRef}
         className="border rounded p-3 mt-4"
-        style={{ height: '480px', overflowY: 'auto', backgroundColor: '#e0effb' }}
+        style={{ height: '480px', overflowY: 'auto', backgroundColor: '#f4faff' }}
       >
         {chatHistory.length === 0 && (
           <p className="text-muted text-center mt-5">

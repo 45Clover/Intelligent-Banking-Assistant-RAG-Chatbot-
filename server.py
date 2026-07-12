@@ -9,7 +9,7 @@ import jwt
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
+from LLMInterface import initialize_Ollm_interface, initialize_Cllm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
 
 app = FastAPI()
 
@@ -23,7 +23,8 @@ app.add_middleware(
 
 #testing run time of the LLM interface
 t0 = time.time()
-banking_bot = initialize_llm_interface() #get the LLM chain initialized and ready to process user queries
+# response_bot = initialize_Ollm_interface()
+banking_bot = initialize_Cllm_interface() #get the LLM chain initialized and ready to process user queries
 print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
 t1 = time.time()

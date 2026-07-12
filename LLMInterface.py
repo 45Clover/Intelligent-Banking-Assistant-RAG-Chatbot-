@@ -1,6 +1,7 @@
 import json
 from pydantic import BaseModel, Field
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
@@ -92,9 +93,8 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
     context = "\n\n".join(context_parts)
     return context, sources
 
+def initialize_Ollm_interface():
 
-def initialize_llm_interface():
-    
     llm = ChatOllama(
         model="llama3.2", # Connect to local Llama 3.2 model
         temperature=0.2,  # low temperature for deterministic output
@@ -116,7 +116,52 @@ def initialize_llm_interface():
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
             "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
-            "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            "4. If your response seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
+            "Format your final output instructions:\n{format_instructions}\n\n"
+            "User Profile:\n{user_profile}\n\n"
+            "Context Documents:\n{context}"
+        )),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{user_query}")
+    ])
+
+    # Add partial variable injecting format expectations into system prompt
+    prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
+
+    # Chain them together (Prompt -> LLM -> JSON Parser)
+    llm_chain = prompt_template | llm | output_parser
+    return llm_chain
+
+
+def initialize_Cllm_interface():
+    # Retrieve the API key from your environment or paste it here directly as a fallback string
+    api_key = os.environ.get("OPENAI_API_KEY", "your-actual-api-key-here")
+
+    # --- UPDATED: Specified reasoning_effort explicitly as a top-level parameter ---
+    llm = ChatOpenAI(
+        model="gpt-5.4-nano", 
+        temperature=0.1,  
+        api_key=api_key,                 # Explicitly passing credentials to fix the crash
+        reasoning_effort="high",          # Explicit parameter to eliminate the UserWarning
+        model_kwargs={
+            "response_format": {"type": "json_object"}
+        }
+    )
+
+    # Initialize the output parser tied to our structure template
+    output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
+
+    # Build System Prompt Template injects JSON formatting layout guidelines dynamically
+    prompt_template = ChatPromptTemplate.from_messages([
+        ("system", (
+            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
+            "Analyze the given user query against the provided Context Documents.\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
+            "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
+            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "4. If your response seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "Format your final output instructions:\n{format_instructions}\n\n"
             "User Profile:\n{user_profile}\n\n"
@@ -311,7 +356,7 @@ runTest = True #set to true if you want to test the LLM interface locally withou
 
 if __name__ == "__main__" and runTest == True:
     print("Initializing structured local LLM interface layer...")
-    banking_bot = initialize_llm_interface()
+    banking_bot = initialize_Cllm_interface()
     memory_buffer = []
 
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
