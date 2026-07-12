@@ -7,6 +7,8 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 import chromadb
 
 import os
@@ -93,8 +95,8 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
     context = "\n\n".join(context_parts)
     return context, sources
 
-# def initialize_Ollm_interface():
-
+def initialize_Ollm_interface():
+    pass
 #     llm = ChatOllama(
 #         model="llama3.2", # Connect to local Llama 3.2 model
 #         temperature=0.7,  # low temperature for deterministic output
@@ -132,26 +134,26 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
 #     llm_chain = prompt_template | llm | output_parser
 #     return llm_chain
 
-
+ #AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg
 def initialize_Cllm_interface():
     # Retrieve the API key from your environment or paste it here directly as a fallback string
-    api_key = os.environ.get("OPENAI_API_KEY", "your-actual-api-key-here")
+    api_key = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg")
 
     if not api_key:
         raise ValueError(
-            "CRITICAL: OPENAI_API_KEY environment variable is missing!\n"
+            "CRITICAL: GEMINI_API_KEY environment variable is missing!\n"
             "Please set it in your terminal via:\n"
-            "  Windows (CMD):  set OPENAI_API_KEY=sk-proj-YourKeyHere...\n"
-            "  Windows (PS):   $env:OPENAI_API_KEY=\"sk-proj-YourKeyHere...\"\n"
-            "  Linux/macOS:    export OPENAI_API_KEY=\"sk-proj-YourKeyHere...\""
+            "  Windows (CMD):  set GEMINI_API_KEY=AIzaSyYourKeyHere...\n"
+            "  Windows (PS):   $env:GEMINI_API_KEY=\"AIzaSyYourKeyHere...\"\n"
+            "  Linux/macOS:    export GEMINI_API_KEY=\"AIzaSyYourKeyHere...\""
         )
 
-    # --- UPDATED: Specified reasoning_effort explicitly as a top-level parameter ---
-    llm = ChatOpenAI(
-        model="gpt-5.4-nano",
+    # --- UPDATED: Swapped to ChatGoogleGenerativeAI with gemini-3.5-flash ---
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3.5-flash",
         temperature=0.3,
-        api_key=api_key,                 # Explicitly passing credentials to fix the crash
-        reasoning_effort="high",         # Explicit parameter to eliminate the UserWarning
+        google_api_key=api_key,         # Explicitly passing credentials to fix the crash
+        # Gemini handles JSON structure mapping natively via its response_format configuration
         model_kwargs={
             "response_format": {"type": "json_object"}
         }
