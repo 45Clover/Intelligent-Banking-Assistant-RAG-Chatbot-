@@ -65,7 +65,7 @@ def triggerQuadrails(parsedOutput):
 
     if confidenceScore < 0.2 and response != "My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.":
         #if the user has a low confidence score and the response is not already a warning, replace it with a warning message
-        response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
+        pass # response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
     
     return response, confidenceScore
 
@@ -81,27 +81,30 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context, sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3) #identify the user to get their specific chat history
-
-        t1 = time.time()
-        print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
-
-        out = process_user_turn_with_sqlite( #invoke the LLM chain to get the response
-            session_id=existing_guest_id, #we want the output that is tied to a specific user
-            current_query=payload.user_query, #input user query
-            banking_bot_chain=banking_bot, #input the initialized LLM chain
-            rag_context=rag_context #input the retrieved context
+        
+        # --- UPDATED TO MATCH LLMInterface.py GOALS ---
+        # The new interface performs cache lookups, relevance threshold checks, and context 
+        # retrieval internally. We now simply invoke process_user_turn_with_sqlite, passing 
+        # the embedder, collection, and top_k directly.
+        out = process_user_turn_with_sqlite(
+            session_id=existing_guest_id,      # we want the output that is tied to a specific user
+            current_query=payload.user_query,   # input user query
+            banking_bot_chain=banking_bot,      # input the initialized LLM chain
+            embedder=embedder,                  # passed through to handle internal embedding/caching
+            collection=collection,              # passed through to handle internal vector lookups
+            top_k=3
         )
-        t2 = time.time()
-        print(f"[TIMING] process_user_turn_with_sqlite: {t2 - t1:.2f}s")
-        print(f"[TIMING] TOTAL: {t2 - t0:.2f}s")
+        
+        t1 = time.time()
+        print(f"[TIMING] process_user_turn_with_sqlite (Cache + RAG + LLM): {t1 - t0:.2f}s")
+        print(f"[TIMING] TOTAL: {t1 - t0:.2f}s")
 
         quadrailedResponse, quadrailedConfidenceScore = triggerQuadrails(out)
 
         return {
             "response": quadrailedResponse,
             "confidence_score": quadrailedConfidenceScore,
-            "sources": sources,
+            "sources": out.get("sources", []), # Extracted directly from the unified process output
             "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
 
@@ -109,6 +112,5 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
 
 #python -m uvicorn server:app --reload --port 8000

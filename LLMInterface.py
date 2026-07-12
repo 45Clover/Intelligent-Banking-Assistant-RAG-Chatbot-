@@ -30,6 +30,7 @@ import jwt
 import datetime
 import uuid
 import time
+import numpy as np  # CACHE FEATURE ADDITION: used for cosine similarity between query embeddings
 BANK_URLS = {
     "sbi": "https://sbi.bank.in/web/customer-care/faq-s",
     "hdfc": "https://www.hdfc.bank.in/faqs",
@@ -67,16 +68,22 @@ class BankingBotResponse(BaseModel):
 
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
-def retrieve_context(user_query, embedder, collection, top_k=3):
-    query_embedding = embedder.encode([user_query]).tolist() #Converting Text to Numbers (Embedding)
+# CACHE/RELEVANCE ADDITION: accepts an optional pre-computed query_embedding so callers that
+# already embedded the query (e.g. for a cache lookup) don't have to embed it a second time.
+def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=None):
+    if query_embedding is None:
+        query_embedding = embedder.encode([user_query]).tolist()[0] #Converting Text to Numbers (Embedding)
+
     results = collection.query( #Searching the Vector Database (Find documents that are similar to the embedded user query)
-        query_embeddings=query_embedding,
-        n_results=top_k
+        query_embeddings=[query_embedding],
+        n_results=top_k,
+        include=["documents", "metadatas", "distances"]  # RELEVANCE ADDITION: need distances to gauge how "banking-related" the query actually is
     )
 
     #Extracting Text and Metadata 
     chunks = results["documents"][0] #The actual raw text blocks extracted from your bank PDFs/FAQs.
     metadatas = results["metadatas"][0] #Accompanying key-value data about those blocks (like file name or category) that is saved during the ingestion phase.
+    distances = results["distances"][0] #RELEVANCE ADDITION: lower distance = the retrieved chunk is a closer semantic match to the query
 
     #Iterating and Building the Context
     context_parts = []
@@ -93,10 +100,15 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
         })
 
     context = "\n\n".join(context_parts)
-    return context, sources
+
+    # RELEVANCE ADDITION: the closest (smallest) distance among the top_k hits. If even the
+    # closest banking document is nowhere near the query, the query is probably off-topic.
+    best_distance = min(distances) if distances else float("inf")
+
+    return context, sources, best_distance, query_embedding
 
 def initialize_Ollm_interface():
-    pass
+    pass #for quadrails
 #     llm = ChatOllama(
 #         model="llama3.2", # Connect to local Llama 3.2 model
 #         temperature=0.7,  # low temperature for deterministic output
@@ -226,6 +238,20 @@ def _get_profile_db_connection():
                 past_queries TEXT
             )
         """)
+        # CACHE FEATURE ADDITION: table backing the semantic query cache (see find_cached_response /
+        # store_query_in_cache below). Stores every question we've already answered, along with the
+        # embedding, so a near-duplicate question later can be answered instantly without RAG + the LLM.
+        _PROFILE_CONN.execute("""
+            CREATE TABLE IF NOT EXISTS query_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query_text TEXT,
+                query_embedding TEXT,
+                intent TEXT,
+                confidence_score REAL,
+                response TEXT,
+                sources_json TEXT
+            )
+        """)
     return _PROFILE_CONN
 
 
@@ -288,7 +314,85 @@ def format_profile_for_prompt(profile: dict) -> str:
     return f"Preferred account type: {preferred}\nRecent topics discussed: {recent}"
 
 
-def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
+# --- CACHE FEATURE ADDITIONS: SEMANTIC QUERY CACHE ---
+# If a new question's embedding is nearly identical to one we've already answered, we skip
+# RAG retrieval and the LLM call entirely and just reuse the prior answer/sources/confidence.
+
+# Cosine similarity threshold for treating two queries as "the same question". 1.0 = identical
+# vectors. Tune this up/down based on how strict you want the duplicate-detection to be.
+QUERY_CACHE_SIMILARITY_THRESHOLD = 0.95
+
+# --- RELEVANCE FEATURE ADDITION ---
+# If even the closest banking document is farther than this from the query, we treat the
+# query as off-topic/out-of-bounds and skip building context + calling the LLM entirely.
+# NOTE: Chroma's default distance metric depends on how the collection was created (L2 vs
+# cosine) - this value may need tuning against your own banking_kb collection.
+IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 1.3
+
+
+def _cosine_similarity(vec_a, vec_b):
+    # Small local helper so two embeddings can be compared without pulling in a heavier ML library.
+    a = np.array(vec_a)
+    b = np.array(vec_b)
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    if denom == 0:
+        return 0.0
+    return float(np.dot(a, b) / denom)
+
+
+def find_cached_response(query_embedding: list):
+    # Looks through every previously-answered question's embedding for the closest match.
+    # Returns a cached parsed_output-style dict (intent/confidence_score/response/sources)
+    # if a near-duplicate question is found above QUERY_CACHE_SIMILARITY_THRESHOLD, else None.
+    with _profile_conn_lock:
+        conn = _get_profile_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT query_embedding, intent, confidence_score, response, sources_json FROM query_cache")
+        rows = cursor.fetchall()
+
+    best_match = None
+    best_similarity = 0.0
+    for embedding_json, intent, confidence_score, response, sources_json in rows:
+        cached_embedding = json.loads(embedding_json)
+        similarity = _cosine_similarity(query_embedding, cached_embedding)
+        if similarity > best_similarity:
+            best_similarity = similarity
+            best_match = {
+                "intent": intent,
+                "confidence_score": confidence_score,
+                "response": response,
+                "sources": json.loads(sources_json) if sources_json else []
+            }
+
+    if best_match is not None and best_similarity >= QUERY_CACHE_SIMILARITY_THRESHOLD:
+        print(f"[CACHE HIT] similarity={best_similarity:.3f} - reusing prior answer, skipping RAG + LLM")
+        return best_match
+
+    return None
+
+
+def store_query_in_cache(query_text: str, query_embedding: list, parsed_output: dict, sources: list):
+    # Saves this turn's question + answer so a future near-duplicate question can be
+    # answered instantly from cache instead of re-running retrieval and the LLM.
+    # query_text itself is stored only for debugging/inspection - matching is done purely on embeddings.
+    with _profile_conn_lock:
+        conn = _get_profile_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO query_cache (query_text, query_embedding, intent, confidence_score, response, sources_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            query_text,
+            json.dumps(query_embedding),
+            parsed_output.get("intent", "out_of_bounds"),
+            parsed_output.get("confidence_score", 0.0),
+            parsed_output.get("response", ""),
+            json.dumps(sources)
+        ))
+        conn.commit()
+
+
+def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, embedder, collection, top_k: int = 3):
 
     t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
@@ -306,22 +410,60 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     user_profile = get_user_profile(session_id)
     formatted_profile = format_profile_for_prompt(user_profile)
 
-    try:
-        parsed_output = banking_bot_chain.invoke({ #gets the LLM response
-            "context": rag_context, #input context
-            "chat_history": past_messages, #input chat history
-            "user_query": current_query, #input user query
-            "user_profile": formatted_profile #input personalization profile
-        })
-    except Exception as e:
-        print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
+    # CACHE FEATURE ADDITION: embed the query once up front so we can check the semantic cache,
+    # and (if we don't get a hit) reuse this same embedding for the relevance check below instead
+    # of embedding the same text twice.
+    query_embedding = embedder.encode([current_query]).tolist()[0]
+
+    cached_result = find_cached_response(query_embedding)
+    was_cache_hit = cached_result is not None
+    t2b = time.time()
+    print(f"[TIMING]   cache lookup: {t2b - t2:.2f}s")
+
+    if was_cache_hit:
+        # --- CACHE HIT: we've already answered a near-identical question before, so reuse that
+        # answer, confidence score, and source documents. RAG retrieval and the LLM are both skipped. ---
         parsed_output = {
-            "intent": "out_of_bounds",
-            "confidence_score": 0.0,
-            "response": "I cannot find that information in our current policies."
+            "intent": cached_result["intent"],
+            "confidence_score": cached_result["confidence_score"],
+            "response": cached_result["response"],
         }
+        sources = cached_result["sources"]
+    else:
+        # RELEVANCE ADDITION: do the vector-store lookup once, and check how close the nearest
+        # banking document actually is before deciding whether to build full context / call the LLM.
+        rag_context, sources, best_distance, _ = retrieve_context(
+            current_query, embedder, collection, top_k=top_k, query_embedding=query_embedding
+        )
+
+        if best_distance > IRRELEVANT_QUERY_DISTANCE_THRESHOLD:
+            # --- RELEVANCE SHORT-CIRCUIT: nothing in the knowledge base is even remotely close
+            # to this query, so it's very likely off-topic/out-of-bounds. Skip calling the LLM
+            # with the retrieved context and just answer directly with low confidence. ---
+            print(f"[RELEVANCE] best_distance={best_distance:.3f} exceeds threshold {IRRELEVANT_QUERY_DISTANCE_THRESHOLD} - treating as out-of-bounds, skipping LLM call")
+            parsed_output = {
+                "intent": "out_of_bounds",
+                "confidence_score": 0.0,
+                "response": "I cannot find that information in our current policies."
+            }
+            sources = []  # no context was actually used to answer, so there's nothing to cite
+        else:
+            try:
+                parsed_output = banking_bot_chain.invoke({ #gets the LLM response
+                    "context": rag_context, #input context
+                    "chat_history": past_messages, #input chat history
+                    "user_query": current_query, #input user query
+                    "user_profile": formatted_profile #input personalization profile
+                })
+            except Exception as e:
+                print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
+                parsed_output = {
+                    "intent": "out_of_bounds",
+                    "confidence_score": 0.0,
+                    "response": "I cannot find that information in our current policies."
+                }
     t3 = time.time()
-    print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
+    print(f"[TIMING]   RAG + LLM chain (or cache/relevance shortcut): {t3 - t2b:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
     chat_history_db.add_user_message(current_query) #add user query and LLM response to the SQLite database for future context [for the specific user session]
     chat_history_db.add_ai_message(parsed_output["response"])
@@ -333,7 +475,14 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t5 = time.time()
     print(f"[TIMING]   update user profile: {t5 - t4:.2f}s")
 
+    # CACHE FEATURE ADDITION: remember this question/answer so a future near-duplicate can be
+    # served instantly from cache. Skip re-storing if this turn was itself already a cache hit,
+    # so we don't keep piling up redundant near-identical rows.
+    if not was_cache_hit:
+        store_query_in_cache(current_query, query_embedding, parsed_output, sources)
+
     parsed_output["user_profile"] = updated_profile
+    parsed_output["sources"] = sources
 
     return parsed_output
 
@@ -382,9 +531,9 @@ if __name__ == "__main__" and runTest == True:
         if user_query == "":
             user_query = " "  # to avoid errors in the LLM chain if user presses enter without typing anything
 
-        rag_context, _ = retrieve_context(user_query, embedder, collection, top_k=3)
-
-        out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, rag_context)
+        # NOTE: retrieval now happens *inside* process_user_turn_with_sqlite (after the cache
+        # check and before the relevance check), so we no longer call retrieve_context here directly.
+        out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, embedder, collection, top_k=3)
         print(f"\n[{current_session}] Response: \n{out['response']}")
 
         print("\n--- Structural JSON Output 1 ---")
