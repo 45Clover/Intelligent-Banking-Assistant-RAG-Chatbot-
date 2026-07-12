@@ -93,57 +93,65 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
     context = "\n\n".join(context_parts)
     return context, sources
 
-def initialize_Ollm_interface():
+# def initialize_Ollm_interface():
 
-    llm = ChatOllama(
-        model="llama3.2", # Connect to local Llama 3.2 model
-        temperature=0.2,  # low temperature for deterministic output
-        format="json", 
-        num_predict=300, #caps generation length (caps how many tokens it can generate) — JSON answers don't need more
-        num_ctx=2048, #bounds context so prompt eval doesn't blow up/grow unbounded
-        keep_alive="30m", #keeps the model resident in Ollama so it isn't reloaded from disk between requests
-    )
+#     llm = ChatOllama(
+#         model="llama3.2", # Connect to local Llama 3.2 model
+#         temperature=0.7,  # low temperature for deterministic output
+#         format="json", 
+#         num_predict=300, #caps generation length (caps how many tokens it can generate) — JSON answers don't need more
+#         num_ctx=2048, #bounds context so prompt eval doesn't blow up/grow unbounded
+#         keep_alive="30m", #keeps the model resident in Ollama so it isn't reloaded from disk between requests
+#     )
 
-    # Initialize the output parser tied to our structure template
-    output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
+#     # Initialize the output parser tied to our structure template
+#     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
 
-    # Build System Prompt Template injects JSON formatting layout guidelines dynamically
-    prompt_template = ChatPromptTemplate.from_messages([
-        ("system", (
-            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
-            "Analyze the given user query against the provided Context Documents.\n\n"
-            "CRITICAL INSTRUCTIONS:\n"
-            "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
-            "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
-            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
-            "4. If your response seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
-            "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
-            "Format your final output instructions:\n{format_instructions}\n\n"
-            "User Profile:\n{user_profile}\n\n"
-            "Context Documents:\n{context}"
-        )),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", "{user_query}")
-    ])
+#     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
+#     prompt_template = ChatPromptTemplate.from_messages([
+#         ("system", (
+#             "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
+#             "Analyze the given user query against the provided Context Documents.\n\n"
+#             "CRITICAL INSTRUCTIONS:\n"
+#             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
+#             "2. If you've already answered the question before, respond with the same answer you gave before.\n"
+#             "3. If the intent is not 'out_of_bounds' I want you to say 'Consulting our official banking policies'\n"
+#             "4. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
+#             "Format your final output instructions:\n{format_instructions}\n\n"
+#             "User Profile:\n{user_profile}\n\n"
+#             "Context Documents:\n{context}"
+#         )),
+#         MessagesPlaceholder(variable_name="chat_history"),
+#         ("human", "{user_query}")
+#     ])
 
-    # Add partial variable injecting format expectations into system prompt
-    prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
+#     # Add partial variable injecting format expectations into system prompt
+#     prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
 
-    # Chain them together (Prompt -> LLM -> JSON Parser)
-    llm_chain = prompt_template | llm | output_parser
-    return llm_chain
+#     # Chain them together (Prompt -> LLM -> JSON Parser)
+#     llm_chain = prompt_template | llm | output_parser
+#     return llm_chain
 
 
 def initialize_Cllm_interface():
     # Retrieve the API key from your environment or paste it here directly as a fallback string
     api_key = os.environ.get("OPENAI_API_KEY", "your-actual-api-key-here")
 
+    if not api_key:
+        raise ValueError(
+            "CRITICAL: OPENAI_API_KEY environment variable is missing!\n"
+            "Please set it in your terminal via:\n"
+            "  Windows (CMD):  set OPENAI_API_KEY=sk-proj-YourKeyHere...\n"
+            "  Windows (PS):   $env:OPENAI_API_KEY=\"sk-proj-YourKeyHere...\"\n"
+            "  Linux/macOS:    export OPENAI_API_KEY=\"sk-proj-YourKeyHere...\""
+        )
+
     # --- UPDATED: Specified reasoning_effort explicitly as a top-level parameter ---
     llm = ChatOpenAI(
-        model="gpt-5.4-nano", 
-        temperature=0.1,  
+        model="gpt-5.4-nano",
+        temperature=0.3,
         api_key=api_key,                 # Explicitly passing credentials to fix the crash
-        reasoning_effort="high",          # Explicit parameter to eliminate the UserWarning
+        reasoning_effort="high",         # Explicit parameter to eliminate the UserWarning
         model_kwargs={
             "response_format": {"type": "json_object"}
         }
