@@ -1,17 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="Major changes to the ui you should see theme when you run your own test .. i wont lie this was the hardest part .. you should see that i split the screen also made it look text based , also when you select the text it changes the source ... you understand ... i havent tested voice input though .. ill update the db aswell later , only db and efficiency left the multilingual left">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="massive db update included more FAQs .... llm still slow though only hurdle left">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/all_chunks_output.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/build_vector_db.py" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/build_vector_db.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/c6fd06f2-6c5a-4115-804b-bc3f390fafe2/data_level0.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/c6fd06f2-6c5a-4115-804b-bc3f390fafe2/header.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/c6fd06f2-6c5a-4115-804b-bc3f390fafe2/index_metadata.pickle" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/c6fd06f2-6c5a-4115-804b-bc3f390fafe2/length.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/c6fd06f2-6c5a-4115-804b-bc3f390fafe2/link_lists.bin" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chunks_with_embeddings.pkl" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -54,25 +45,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.LLMInterface.executor": "Run",
-    "Python.build_vector_db.executor": "Run",
-    "Python.chunking_test_with_txt.executor": "Run",
-    "Python.embed_chunks.executor": "Run",
-    "Python.ingest pipeline.executor": "Run",
-    "Python.ingest_pipeline.executor": "Run",
-    "Python.recursive_token_chunker.executor": "Run",
-    "Python.testing_pdf_extractor.executor": "Run",
-    "Python.text_query.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/nyash/PycharmProjects/Intelligent-Banking-Assistant-RAG-Chatbot-/Chunking"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.LLMInterface.executor&quot;: &quot;Run&quot;,
+    &quot;Python.build_vector_db.executor&quot;: &quot;Run&quot;,
+    &quot;Python.chunking_test_with_txt.executor&quot;: &quot;Run&quot;,
+    &quot;Python.embed_chunks.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ingest pipeline.executor&quot;: &quot;Run&quot;,
+    &quot;Python.ingest_pipeline.executor&quot;: &quot;Run&quot;,
+    &quot;Python.recursive_token_chunker.executor&quot;: &quot;Run&quot;,
+    &quot;Python.testing_pdf_extractor.executor&quot;: &quot;Run&quot;,
+    &quot;Python.text_query.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/nyash/PycharmProjects/Intelligent-Banking-Assistant-RAG-Chatbot-/Chunking&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\nyash\PycharmProjects\Intelligent-Banking-Assistant-RAG-Chatbot-\Chunking" />
@@ -329,7 +320,23 @@
       <option name="project" value="LOCAL" />
       <updated>1783877358234</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="massive db update included more FAQs .... llm still slow though only hurdle left">
+      <option name="closed" value="true" />
+      <created>1783887268150</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1783887268150</updated>
+    </task>
+    <task id="LOCAL-00031" summary="massive db update included more FAQs .... llm still slow though only hurdle left">
+      <option name="closed" value="true" />
+      <created>1783887284550</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1783887284550</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -377,7 +384,8 @@
     <MESSAGE value="added document source that sends to url site of documents ... having a unique url for each document seemed tedious considering how botched i did the data collect" />
     <MESSAGE value="ran some more test .. will be updating policies more" />
     <MESSAGE value="Major changes to the ui you should see theme when you run your own test .. i wont lie this was the hardest part .. you should see that i split the screen also made it look text based , also when you select the text it changes the source ... you understand ... i havent tested voice input though .. ill update the db aswell later , only db and efficiency left the multilingual left" />
-    <option name="LAST_COMMIT_MESSAGE" value="Major changes to the ui you should see theme when you run your own test .. i wont lie this was the hardest part .. you should see that i split the screen also made it look text based , also when you select the text it changes the source ... you understand ... i havent tested voice input though .. ill update the db aswell later , only db and efficiency left the multilingual left" />
+    <MESSAGE value="massive db update included more FAQs .... llm still slow though only hurdle left" />
+    <option name="LAST_COMMIT_MESSAGE" value="massive db update included more FAQs .... llm still slow though only hurdle left" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
