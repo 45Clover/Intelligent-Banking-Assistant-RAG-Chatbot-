@@ -32,12 +32,17 @@ def build_vector_db(chunks):
         metadatas.append(chunk["metadata"])
 
     # add everything in one batch call
-    collection.add(
-        ids=ids,
-        documents=documents,
-        embeddings=embeddings,
-        metadatas=metadatas,
-    )
+    BATCH_SIZE = 5000  # safely under the 5461 max
+
+    for start in range(0, len(ids), BATCH_SIZE):
+        end = start + BATCH_SIZE
+        collection.add(
+            ids=ids[start:end],
+            documents=documents[start:end],
+            embeddings=embeddings[start:end],
+            metadatas=metadatas[start:end],
+        )
+
 
     return collection
 
