@@ -2,9 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ran some more test .. will be updating policies more">
+      <change afterPath="$PROJECT_DIR$/my-react-bank/src/ChatInterface.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chroma_db/chroma.sqlite3" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/my-react-bank/src/ChatInterface.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/my-react-bank/src/ChatInterface.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -304,7 +306,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783720536092</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="ran some more test .. will be updating policies more">
+      <option name="closed" value="true" />
+      <created>1783869262401</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1783869262401</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
