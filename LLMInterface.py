@@ -94,8 +94,15 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
 
 
 def initialize_llm_interface():
-    # Connect to local Llama 3.2 model
-    llm = ChatOllama(model="llama3.2", temperature=0.2, format = "json")  # low temperature for deterministic output
+    
+    llm = ChatOllama(
+        model="llama3.2", # Connect to local Llama 3.2 model
+        temperature=0.2,  # low temperature for deterministic output
+        format="json", 
+        num_predict=300, #caps generation length (caps how many tokens it can generate) — JSON answers don't need more
+        num_ctx=2048, #bounds context so prompt eval doesn't blow up/grow unbounded
+        keep_alive="30m", #keeps the model resident in Ollama so it isn't reloaded from disk between requests
+    )
 
     # Initialize the output parser tied to our structure template
     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
@@ -109,7 +116,7 @@ def initialize_llm_interface():
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
             "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
-            "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "Format your final output instructions:\n{format_instructions}\n\n"
             "User Profile:\n{user_profile}\n\n"
@@ -130,34 +137,53 @@ def initialize_llm_interface():
 # Memory management for user sessions using SQLite
 DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
+# Reuse one engine across requests instead of letting SQLChatMessageHistory open a fresh
+# connection pool every single turn - opening/closing engines repeatedly was adding latency.
+from sqlalchemy import create_engine
+CHAT_HISTORY_ENGINE = create_engine(DB_CONNECTION_STRING)
+
+# How many recent messages (user+ai combined) to send to the LLM as chat_history.
+# Sending the entire unbounded history back on every turn slows down prompt processing
+# as a conversation grows, so we cap it to a recent rolling window.
+MAX_HISTORY_MESSAGES = 6
+
 # Personalization: user profile storage (preferred account type + recent past queries)
 # Reuses the same physical sqlite file as chat history, in its own table.
 PROFILE_DB_PATH = "chat_history.db"
 MAX_PAST_QUERIES = 5  # how many recent queries we keep for personalization context
 
 
+import threading
+_profile_conn_lock = threading.Lock()
+_PROFILE_CONN = None  # lazily created, reused across requests to avoid reconnect overhead
+
+
 def _get_profile_db_connection():
-    conn = sqlite3.connect(PROFILE_DB_PATH)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS user_profiles (
-            session_id TEXT PRIMARY KEY,
-            preferred_account_type TEXT,
-            past_queries TEXT
-        )
-    """)
-    return conn
+    # Reuse one long-lived connection instead of opening/closing a new one every call -
+    # repeated connect/close was adding avoidable latency to each turn.
+    global _PROFILE_CONN
+    if _PROFILE_CONN is None:
+        _PROFILE_CONN = sqlite3.connect(PROFILE_DB_PATH, check_same_thread=False)
+        _PROFILE_CONN.execute("""
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                session_id TEXT PRIMARY KEY,
+                preferred_account_type TEXT,
+                past_queries TEXT
+            )
+        """)
+    return _PROFILE_CONN
 
 
 def get_user_profile(session_id: str) -> dict:
     # Returns the stored personalization profile for a session, or sensible defaults if none exists yet.
-    conn = _get_profile_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "SELECT preferred_account_type, past_queries FROM user_profiles WHERE session_id = ?",
-        (session_id,)
-    )
-    row = cursor.fetchone()
-    conn.close()
+    with _profile_conn_lock:
+        conn = _get_profile_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT preferred_account_type, past_queries FROM user_profiles WHERE session_id = ?",
+            (session_id,)
+        )
+        row = cursor.fetchone()
 
     if row is None:
         return {"preferred_account_type": None, "past_queries": []}
@@ -182,17 +208,17 @@ def update_user_profile(session_id: str, current_query: str, intent: str) -> dic
         preferred_account_type = "loan/mortgage account"
     # if intent is "out_of_bounds", leave the existing preferred_account_type untouched
 
-    conn = _get_profile_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO user_profiles (session_id, preferred_account_type, past_queries)
-        VALUES (?, ?, ?)
-        ON CONFLICT(session_id) DO UPDATE SET
-            preferred_account_type = excluded.preferred_account_type,
-            past_queries = excluded.past_queries
-    """, (session_id, preferred_account_type, json.dumps(past_queries)))
-    conn.commit()
-    conn.close()
+    with _profile_conn_lock:
+        conn = _get_profile_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO user_profiles (session_id, preferred_account_type, past_queries)
+            VALUES (?, ?, ?)
+            ON CONFLICT(session_id) DO UPDATE SET
+                preferred_account_type = excluded.preferred_account_type,
+                past_queries = excluded.past_queries
+        """, (session_id, preferred_account_type, json.dumps(past_queries)))
+        conn.commit()
 
     return {"preferred_account_type": preferred_account_type, "past_queries": past_queries}
 
@@ -205,7 +231,6 @@ def format_profile_for_prompt(profile: dict) -> str:
     preferred = profile["preferred_account_type"] or "unknown"
     recent = "; ".join(profile["past_queries"]) if profile["past_queries"] else "none"
     return f"Preferred account type: {preferred}\nRecent topics discussed: {recent}"
-###
 
 
 def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
@@ -213,12 +238,12 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
         session_id=session_id,
-        connection=DB_CONNECTION_STRING
+        connection=CHAT_HISTORY_ENGINE
     )
     t1 = time.time()
     print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s") #Test Run time
 
-    past_messages = chat_history_db.messages
+    past_messages = chat_history_db.messages[-MAX_HISTORY_MESSAGES:] #cap history window so prompt processing time doesn't grow with the conversation
     t2 = time.time()
     print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s") #Test Run Time
 
@@ -279,8 +304,11 @@ def generate_anonymous_token():
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return token
 
-runTest = True #set to true if you want to test the LLM interface locally without running the FastAPI server.
+
+
 # --- Test Execution ---
+runTest = True #set to true if you want to test the LLM interface locally without running the FastAPI server.
+
 if __name__ == "__main__" and runTest == True:
     print("Initializing structured local LLM interface layer...")
     banking_bot = initialize_llm_interface()
