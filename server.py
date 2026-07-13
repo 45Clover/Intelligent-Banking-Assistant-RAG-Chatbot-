@@ -64,7 +64,7 @@ def triggerQuadrails(parsedOutput):
 
     if confidenceScore < 0.2 and response != "My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.":
         #if the user has a low confidence score and the response is not already a warning, replace it with a warning message
-        response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
+        pass # response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
     
     return response, confidenceScore
 
@@ -104,7 +104,7 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         return {
             "response": quadrailedResponse,
             "confidence_score": quadrailedConfidenceScore,
-            "sources": sources,
+            "sources": out.get("sources", []), # Extracted directly from the unified process output
             "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
 
@@ -112,6 +112,5 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
-
 
 #python -m uvicorn server:app --reload --port 8000
