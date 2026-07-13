@@ -87,7 +87,7 @@ if __name__ == "__main__":
     chunks = run_ingestion(base_path="..")
     print(f"\nTotal chunks across all documents: {len(chunks)}")
 
-    # Write everything to one text file for inspection
+    # Write everything to one text file (all_chunks_output.txt) for inspection
     with open("all_chunks_output.txt", "w", encoding="utf-8") as out:
         for i, c in enumerate(chunks):
             out.write(f"--- Chunk {i+1} | {c['metadata']['category']} | {c['metadata']['source_file']} ---\n")

@@ -27,12 +27,12 @@ banking_bot = initialize_llm_interface() #get the LLM chain initialized and read
 print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
 t1 = time.time()
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+embedder = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2") #load the multilingual embedding model for RAG retrieval (old model: all-MiniLM-L6-v2)
 print(f"[STARTUP] SentenceTransformer load: {time.time() - t1:.2f}s", flush=True)
 
 t2 = time.time()
 chroma_client = chromadb.PersistentClient(path="Chunking/chroma_db")
-collection = chroma_client.get_collection(name="banking_kb")
+collection = chroma_client.get_or_create_collection(name="banking_kb") #.get_collection()
 print(f"[STARTUP] Chroma client + collection: {time.time() - t2:.2f}s", flush=True)
 
 t3 = time.time()
@@ -64,7 +64,7 @@ def triggerQuadrails(parsedOutput):
 
     if confidenceScore < 0.2 and response != "My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.":
         #if the user has a low confidence score and the response is not already a warning, replace it with a warning message
-        response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
+        pass#response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
     
     return response, confidenceScore
 
