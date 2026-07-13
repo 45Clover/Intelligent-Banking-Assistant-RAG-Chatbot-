@@ -9,7 +9,7 @@ import jwt
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
+from LLMInterface import initialize_llm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token, detect_query_language
 
 app = FastAPI()
 
@@ -80,16 +80,20 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context, sources  = retrieve_context(payload.user_query, embedder, collection, top_k=3) #identify the user to get their specific chat history
+        rag_context, sources = retrieve_context(payload.user_query, embedder, collection,
+                                                top_k=3)  # identify the user to get their specific chat history
+
+        query_lang = detect_query_language(payload.user_query)
 
         t1 = time.time()
         print(f"[TIMING] retrieve_context: {t1 - t0:.2f}s")
 
-        out = process_user_turn_with_sqlite( #invoke the LLM chain to get the response
-            session_id=existing_guest_id, #we want the output that is tied to a specific user
-            current_query=payload.user_query, #input user query
-            banking_bot_chain=banking_bot, #input the initialized LLM chain
-            rag_context=rag_context #input the retrieved context
+        out = process_user_turn_with_sqlite(  # invoke the LLM chain to get the response
+            session_id=existing_guest_id,  # we want the output that is tied to a specific user
+            current_query=payload.user_query,  # input user query
+            banking_bot_chain=banking_bot,  # input the initialized LLM chain
+            rag_context=rag_context,  # input the retrieved context
+            query_language=query_lang  # input the detected language of the query
         )
         t2 = time.time()
         print(f"[TIMING] process_user_turn_with_sqlite: {t2 - t1:.2f}s")

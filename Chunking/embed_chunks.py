@@ -3,7 +3,7 @@ from sentence_transformers import SentenceTransformer
 from ingest_pipeline import run_ingestion
 
 # CONFIG
-MODEL_NAME = "all-MiniLM-L6-v2"  # small, fast, runs fine on CPU
+MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"  # small, fast, runs fine on CPU
 BASE_PATH = ".."  # same as ingest_pipeline: run this from inside Chunking folder
 
 
@@ -11,7 +11,7 @@ def generate_embeddings(chunks, model):
     """Takes list of chunk dicts (text + metadata), returns same list with 'embedding' added."""
     texts = [c["text"] for c in chunks]
 
-    print(f"Embedding {len(texts)} chunks... (first run downloads the model, ~80MB)")
+    print(f"Embedding {len(texts)} chunks... (first run downloads the model")
     embeddings = model.encode(texts, show_progress_bar=True)
 
     for chunk, embedding in zip(chunks, embeddings):

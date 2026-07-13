@@ -6,8 +6,9 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 
+from langdetect import detect
 import chromadb
-
+import html
 import os
 os.environ["HF_HUB_OFFLINE"] = "1" #trying to make it faster
 from sentence_transformers import SentenceTransformer
@@ -84,6 +85,8 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
         context_parts.append(f"Document: {source} ({category})\n{chunk}")
 
         url = get_source_url(source, category)
+
+
         sources.append({
             "name": source,
             "url": url
@@ -91,7 +94,11 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
 
     context = "\n\n".join(context_parts)
     return context, sources
-
+def detect_query_language(user_query: str) -> str:
+    try:
+        return detect(user_query)
+    except:
+        return "en"  # Default to English if detection fails
 
 def initialize_llm_interface():
     
@@ -118,6 +125,7 @@ def initialize_llm_interface():
             "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
             "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
+            "6. Respond ONLY in this language: {query_language}. This is mandatory regardless of what language the Context Documents are in.\n\n"
             "Format your final output instructions:\n{format_instructions}\n\n"
             "User Profile:\n{user_profile}\n\n"
             "Context Documents:\n{context}"
@@ -232,8 +240,8 @@ def format_profile_for_prompt(profile: dict) -> str:
     recent = "; ".join(profile["past_queries"]) if profile["past_queries"] else "none"
     return f"Preferred account type: {preferred}\nRecent topics discussed: {recent}"
 
+def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str,query_language: str):
 
-def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str):
 
     t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
@@ -256,7 +264,8 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
             "context": rag_context, #input context
             "chat_history": past_messages, #input chat history
             "user_query": current_query, #input user query
-            "user_profile": formatted_profile #input personalization profile
+            "user_profile": formatted_profile ,#input personalization profile
+            "query_language": query_language   # Add this line
         })
     except Exception as e:
         print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
@@ -265,9 +274,14 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
             "confidence_score": 0.0,
             "response": "I cannot find that information in our current policies."
         }
+
+
     t3 = time.time()
     print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
+
+    if "response" in parsed_output:
+        parsed_output["response"] = html.unescape(parsed_output["response"])
     chat_history_db.add_user_message(current_query) #add user query and LLM response to the SQLite database for future context [for the specific user session]
     chat_history_db.add_ai_message(parsed_output["response"])
     t4 = time.time()
@@ -328,8 +342,10 @@ if __name__ == "__main__" and runTest == True:
             user_query = " "  # to avoid errors in the LLM chain if user presses enter without typing anything
 
         rag_context, _ = retrieve_context(user_query, embedder, collection, top_k=3)
+        query_lang = detect_query_language(user_query)
+        out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, rag_context, query_lang)
 
-        out = process_user_turn_with_sqlite(current_session, user_query, banking_bot, rag_context)
+
         print(f"\n[{current_session}] Response: \n{out['response']}")
 
         print("\n--- Structural JSON Output 1 ---")
