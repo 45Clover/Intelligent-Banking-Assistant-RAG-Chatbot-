@@ -14,7 +14,7 @@ An automated, production-grade Retrieval-Augmented Generation (RAG) banking assi
 
 ## Architecture
 
-![RAG pipeline architecture](docs/architecture.png)
+![RAG pipeline architecture](doc/architecture.png)
 
 ## 🚀 Key Features
 

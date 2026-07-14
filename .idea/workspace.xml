@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild.">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="updated the readme">
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/doc/200.webp" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -18,6 +18,7 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <option name="PUSH_AUTO_UPDATE" value="true" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
         <entry key="$PROJECT_DIR$" value="UIconnectLLM" />
@@ -352,7 +353,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783915081910</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="updated the readme">
+      <option name="closed" value="true" />
+      <created>1784050669727</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1784050669727</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -403,7 +412,8 @@
     <MESSAGE value="massive db update included more FAQs .... llm still slow though only hurdle left" />
     <MESSAGE value="just ran some tests so see responses Dn seems fine .. LLM left to update" />
     <MESSAGE value="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild." />
-    <option name="LAST_COMMIT_MESSAGE" value="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild." />
+    <MESSAGE value="updated the readme" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated the readme" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
