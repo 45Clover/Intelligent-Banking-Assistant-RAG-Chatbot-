@@ -94,7 +94,7 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         return {
             "response": out.get("response", "No response generated."),
             "confidence_score": out.get("confidence_score", 0.0),
-            "sources": out.get("sources", []), # Extracted directly from the unified process output
+            "sources": sources,  # <-- from retrieve_context(), not from out
             "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
 
