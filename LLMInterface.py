@@ -100,7 +100,29 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
 
     context = "\n\n".join(context_parts)
     return context, sources
+# Manual language override — lets a user force the response language,
+# bypassing detect_query_language entirely for that session until changed again.
+SESSION_LANGUAGE_OVERRIDE = {}
 
+LANGUAGE_COMMANDS = {
+    "/en": "en",
+    "/english": "en",
+    "/fr": "fr",
+    "/french": "fr",
+}
+
+def check_language_command(user_query: str):
+    """Returns 'en'/'fr' if the query is a language-switch command, else None."""
+    return LANGUAGE_COMMANDS.get(user_query.strip().lower())
+
+def resolve_query_language(session_id: str, user_query: str) -> str:
+    forced = check_language_command(user_query)
+    if forced:
+        SESSION_LANGUAGE_OVERRIDE[session_id] = forced
+        return forced
+    if session_id in SESSION_LANGUAGE_OVERRIDE:
+        return SESSION_LANGUAGE_OVERRIDE[session_id]
+    return detect_query_language(user_query)
 
 from langdetect import detect_langs
 def detect_query_language(user_query: str) -> str:
@@ -367,7 +389,11 @@ if __name__ == "__main__" and runTest == True:
         user_query = input()  # clean user input
         if user_query == "":
             user_query = " "  # to avoid errors in the LLM chain if user presses enter without typing anything
-        query_lang = detect_query_language(user_query)
+        query_lang = resolve_query_language(current_session, user_query)
+
+        if check_language_command(user_query):
+            print(f"[Language switched to: {query_lang}]")
+            continue
         rag_context, _ = retrieve_context(user_query, embedder, collection, top_k=3)
 
 

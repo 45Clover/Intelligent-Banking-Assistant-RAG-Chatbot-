@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="updated the readme">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/server.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -371,7 +368,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784051017161</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant">
+      <option name="closed" value="true" />
+      <created>1784055332108</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1784055332108</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -398,7 +403,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="FAQ's, source , SBI" />
     <MESSAGE value="adding file with tests for code performance" />
     <MESSAGE value="added test run for PyPDF2 and a txt file to show how it works based on the structure of the FAQ's pdfs" />
     <MESSAGE value="Adding a base chunker , it's the template to the RecursiveTokenChunker" />
@@ -423,7 +427,8 @@
     <MESSAGE value="just ran some tests so see responses Dn seems fine .. LLM left to update" />
     <MESSAGE value="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild." />
     <MESSAGE value="updated the readme" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated the readme" />
+    <MESSAGE value="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant" />
+    <option name="LAST_COMMIT_MESSAGE" value="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
