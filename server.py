@@ -9,7 +9,14 @@ import jwt
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-from LLMInterface import initialize_Ollm_interface, initialize_Cllm_interface, process_user_turn_with_sqlite, retrieve_context, generate_anonymous_token
+from LLMInterface import (
+    initialize_llm_interface,
+    process_user_turn_with_sqlite,
+    delete_user_profile,
+    generate_anonymous_token,
+    CHAT_HISTORY_ENGINE  
+)
+from langchain_community.chat_message_histories import SQLChatMessageHistory
 
 app = FastAPI()
 
@@ -24,7 +31,7 @@ app.add_middleware(
 #testing run time of the LLM interface
 t0 = time.time()
 # response_bot = initialize_Ollm_interface()
-banking_bot = initialize_Cllm_interface() #get the LLM chain initialized and ready to process user queries
+banking_bot = initialize_llm_interface() #get the LLM chain initialized and ready to process user queries
 print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
 t1 = time.time()
@@ -59,17 +66,6 @@ async def init_chat():
     return {"token": token}
 
 
-def triggerQuadrails(parsedOutput):
-    response = parsedOutput.get("response", "No response generated.")
-    confidenceScore = parsedOutput.get("confidence_score", 0.0)
-
-    if confidenceScore < 0.2 and response != "My answer may be financially harmful. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant.":
-        #if the user has a low confidence score and the response is not already a warning, replace it with a warning message
-        pass # response = "I am uncertain about my answer. Please press 'Source Documents' to refer to official banking policies or press 'Human Escalation' for a human consultant."
-    
-    return response, confidenceScore
-
-
 @app.post("/api/chat")
 async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -99,11 +95,9 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         print(f"[TIMING] process_user_turn_with_sqlite (Cache + RAG + LLM): {t1 - t0:.2f}s")
         print(f"[TIMING] TOTAL: {t1 - t0:.2f}s")
 
-        quadrailedResponse, quadrailedConfidenceScore = triggerQuadrails(out)
-
         return {
-            "response": quadrailedResponse,
-            "confidence_score": quadrailedConfidenceScore,
+            "response": out.get("response", "No response generated."),
+            "confidence_score": out.get("confidence_score", 0.0),
             "sources": out.get("sources", []), # Extracted directly from the unified process output
             "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
@@ -113,4 +107,64 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+#python -m uvicorn server:app --reload --port 8000
+@app.get("/api/debug-history-count")
+async def debug_history_count(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+    try:
+        token = authorization.split(" ")[1]
+        decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        existing_guest_id = decoded_payload["sub"]
+        chat_history_db = SQLChatMessageHistory(session_id=existing_guest_id, connection=CHAT_HISTORY_ENGINE)
+        return {
+            "session_id": existing_guest_id,
+            "message_count": len(chat_history_db.messages),
+        }
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+ 
+@app.post("/api/clear-history")
+async def clear_history_endpoint(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid token")
+
+    try:
+        token = authorization.split(" ")[1]
+        decoded_payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        existing_guest_id = decoded_payload["sub"]
+
+        chat_history_db = SQLChatMessageHistory(session_id=existing_guest_id, connection=CHAT_HISTORY_ENGINE)
+
+        messages_before = len(chat_history_db.messages)
+        chat_history_db.clear()
+        messages_after = len(chat_history_db.messages)
+
+        print(f"[CLEAR-HISTORY] session={existing_guest_id} messages_before={messages_before} messages_after={messages_after}", flush=True)
+
+        # The chat message log isn't the only place memory lives - the per-session
+        # profile (preferred account type + recent topics) is stored separately
+        # and gets injected into every future prompt, so it must be wiped too.
+        delete_user_profile(existing_guest_id)
+
+        if messages_after != 0:
+            # .clear() ran without raising but rows are still there - most likely this
+            # engine/table isn't the one chat turns actually write to, or session_id
+            # doesn't match what's stored. Surface it instead of pretending success.
+            raise HTTPException(
+                status_code=500,
+                detail=f"Clear reported success but {messages_after} messages remain for this session."
+            )
+
+        return {
+            "status": "success",
+            "detail": "Chat memory erased successfully.",
+            "messages_cleared": messages_before,
+        }
+
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear history: {str(e)}")
+    
 #python -m uvicorn server:app --reload --port 8000

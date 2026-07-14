@@ -1,13 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'; //#http://localhost:5174 // npm run dev
-
+import './ChatInterface.css';
 function ChatInterface() {
   const [userInput, setUserInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
-  const [openMenuIndex, setOpenMenuIndex] = useState(null);
-  const [visibleSourcesIndex, setVisibleSourcesIndex] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(null); // which AI message's details are shown in the sidebar
   const [isLoading, setIsLoading] = useState(false); // Track server loading state
   const scrollRef = useRef(null);
-  const TypicalBorderRadius = "12px"; // standard border radius for chat bubbles
 
   // --- VOICE FEATURE ADDITIONS: STATE ---
   const [isListening, setIsListening] = useState(false); // true while the mic is actively capturing speech
@@ -19,12 +17,11 @@ function ChatInterface() {
   useEffect(() => {
     const initializeSession = async () => {
       let savedToken = localStorage.getItem("chat_token");
-      
-      // If no token exists in the browser storage, request a new one from the server
+
       if (!savedToken) {
         try {
           console.log("No guest session token found. Fetching a new anonymous token...");
-          const response = await fetch("http://localhost:8000/api/init-chat"); // Make sure this endpoint exists on your FastAPI server
+          const response = await fetch("http://localhost:8000/api/init-chat");
           if (response.ok) {
             const data = await response.json();
             localStorage.setItem("chat_token", data.token);
@@ -43,78 +40,69 @@ function ChatInterface() {
 
   // --- VOICE FEATURE ADDITIONS: SET UP SPEECH RECOGNITION (VOICE -> TEXT) ONCE ON MOUNT ---
   useEffect(() => {
-    // Chrome/Edge expose this under the "webkit" prefix, some browsers don't support it at all
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognitionAPI) {
-      // No voice input support in this browser (e.g. Firefox) - hide mic UI gracefully
       console.warn("SpeechRecognition API not supported in this browser. Voice input disabled.");
       setSpeechSupported(false);
       return;
     }
 
     const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = false; // stop automatically after the user pauses speaking
-    recognition.interimResults = true; // stream partial results so the textbox updates live as the user talks
+    recognition.continuous = false;
+    recognition.interimResults = true;
     recognition.lang = "en-US";
 
     recognition.onstart = () => {
-      setIsListening(true); //Only set listening to true when browser successfully activates the mic
+      setIsListening(true);
     };
 
-    // Fires repeatedly as speech is recognized (both interim and final chunks)
     recognition.onresult = (event) => {
       let transcript = "";
       for (let i = 0; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
       }
-      setUserInput(transcript); // mirror the spoken words into the existing text box, reusing the normal submit flow
+      setUserInput(transcript);
     };
 
-    // Fires on any recognition error (e.g. no mic permission, no speech detected)
     recognition.onerror = (event) => {
       console.error("SpeechRecognition error:", event.error);
       setIsListening(false);
     };
 
-    // Fires when the recognition session ends (either naturally or via .stop())
     recognition.onend = () => {
       setIsListening(false);
     };
 
     recognitionRef.current = recognition;
 
-    // Cleanup: abort any in-progress recognition if the component unmounts
     return () => {
       recognition.abort();
     };
   }, []);
 
-  // --- VOICE FEATURE ADDITIONS: MIC BUTTON HANDLER (STARTS/STOPS LISTENING) ---
   const handleMicToggle = () => {
     const recognition = recognitionRef.current;
     if (!recognition || isLoading) return;
 
     if (isListening) {
-      recognition.stop(); // user clicked the mic again to manually stop
+      recognition.stop();
       setIsListening(false);
     } else {
-      setUserInput(''); // clear old text so the fresh transcript doesn't append onto stale input
+      setUserInput('');
       try {
         recognition.start();
         setIsListening(true);
       } catch (err) {
-        // start() throws if recognition is already running - safe to ignore
         console.error("Could not start SpeechRecognition:", err);
       }
     }
   };
 
-  // --- VOICE FEATURE ADDITIONS: TEXT -> SPEECH PLAYBACK FOR AI RESPONSES ---
   const speakText = (text) => {
     if (!window.speechSynthesis || !text) return;
 
-    window.speechSynthesis.cancel(); // stop any currently playing speech before starting new speech
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     window.speechSynthesis.speak(utterance);
@@ -124,15 +112,61 @@ function ChatInterface() {
     setUserInput(event.target.value);
   };
 
-  // --- NEW KEYBIND ENTER HANDLER ---
   const handleKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault(); // Stop a new blank line from breaking layout inside the textarea
-      handleSubmit(event);    // Force form submission
+      event.preventDefault();
+      handleSubmit(event);
     }
   };
 
-  // --- STEP 3 MODIFICATION: CONVERT MOCK SUBMIT TO REAL ASYNC BACKEND CALL ---
+  // NEW FEATURE: True Backend Memory Erasure
+  // --- BACKEND MEMORY ERASURE HANDLER (TOTAL STATE RESET) ---
+  const handleEraseMemory = async () => {
+    const savedToken = localStorage.getItem("chat_token");
+    if (!savedToken) return;
+
+    try {
+      // setIsLoading(true);
+
+      // 1. Force stop the microphone if it's currently listening
+      if (recognitionRef.current && isListening) {
+        try {
+          recognitionRef.current.abort();
+        } catch (e) {
+          console.error("Failed to abort speech recognition:", e);
+        }
+      }
+      setIsListening(false); // Explicitly clear microphone state flag
+
+      const response = await fetch("http://localhost:8000/api/clear-history", {
+        method: "POST",
+        headers: { 
+          "Authorization": `Bearer ${savedToken}` 
+        }
+      });
+
+      if (!response.ok) {
+        console.error("Failed to clear backend database memory.");
+      }
+    } catch (error) {
+      console.error("Network error clearing history:", error);
+    } finally {
+      // 2. Clear ALL locking mechanisms immediately before the alert fires
+      setIsLoading(false);
+      setIsListening(false);
+      setUserInput(''); // Reset text box value to empty string
+
+      // 3. Clear local state arrays
+      setChatHistory([]);
+      setSelectedIndex(null);
+
+      // 4. Trigger the alert inside a safe timeout window
+      setTimeout(() => {
+        alert("Success: The AI's conversational memory database has been wiped clean!");
+      }, 50);
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!userInput.trim() || isLoading) return;
@@ -158,7 +192,7 @@ function ChatInterface() {
     };
 
     const fetchNewToken = async () => {
-      const initResponse = await fetch("http://localhost:8000/api/init-chat");  // localhost:8000 is the default address where the Python FastAPI (from server.py) server runs
+      const initResponse = await fetch("http://localhost:8000/api/init-chat");
       if (!initResponse.ok) {
         throw new Error("Failed to fetch a new session token");
       }
@@ -170,14 +204,12 @@ function ChatInterface() {
     try {
       let savedToken = localStorage.getItem("chat_token") || "";
 
-      // If we have no token at all, get one before even trying
       if (!savedToken) {
         savedToken = await fetchNewToken();
       }
 
       let response = await callChatApi(savedToken);
 
-      // If the token was expired/invalid, refresh it once and retry
       if (response.status === 401) {
         console.log("Token expired or invalid — fetching a new one and retrying...");
         savedToken = await fetchNewToken();
@@ -190,272 +222,279 @@ function ChatInterface() {
 
       const data = await response.json();
 
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          text: data.response,
-          confidence: data.confidence_score || 0.00,
-          sources: data.sources || [],
-        },
-      ]);
+      setChatHistory((prev) => {
+        const updated = [
+          ...prev,
+          {
+            role: 'ai',
+            text: data.response,
+            confidence: data.confidence_score || 0.00,
+            sources: data.sources || [],
+          },
+        ];
+        setSelectedIndex(updated.length - 1);
+        return updated;
+      });
 
-      // --- VOICE FEATURE ADDITION: SPEAK THE RESPONSE OUT LOUD IF ENABLED ---
       if (voiceOutputEnabled) {
         speakText(data.response);
       }
     } catch (error) {
       console.error("Failed to fetch real LLM response:", error);
 
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          text: "System Error: Unable to establish connection with the secure banking backend pipeline.",
-          confidence: 0,
-          sources: ["Network Firewall / Offline Connection Error"],
-        },
-      ]);
+      setChatHistory((prev) => {
+        const updated = [
+          ...prev,
+          {
+            role: 'ai',
+            text: "System Error: Unable to establish connection with the secure banking backend pipeline.",
+            confidence: 0,
+            sources: ["Network Firewall / Offline Connection Error"],
+          },
+        ];
+        setSelectedIndex(updated.length - 1);
+        return updated;
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleEscalate = (index) => {
-    // In a real application, you'd trigger your human hand-off logic here
     console.log('Escalating to human hand-off...', index);
     alert('Escalating to human hand-off... (Simulation)');
-    setOpenMenuIndex(null);
   };
 
-  const toggleSources = (index) => {
-    setVisibleSourcesIndex((prev) => (prev === index ? null : index));
-    setOpenMenuIndex(null);
+  const handleClearHistory = () => {
+    setChatHistory([]);
+    setSelectedIndex(null);
   };
 
-  const toggleMenu = (index) => {
-    setOpenMenuIndex((prev) => (prev === index ? null : index));
-  };
-
-  // Auto-scroll to the latest message whenever the conversation updates
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [chatHistory, isLoading]);
 
+  const selectedMessage = selectedIndex !== null ? chatHistory[selectedIndex] : null;
+
   return (
-    <div className="container mt-5" style={{ maxWidth: '800px' }}>
-      <div className="d-flex align-items-center justify-content-between">
-        <h1>Intelligent Banking Assistant UI</h1>
-        {/* VOICE FEATURE ADDITION: master toggle for auto-reading AI responses aloud */}
-        <div className="form-check form-switch">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            role="switch"
-            id="voiceOutputToggle"
-            checked={voiceOutputEnabled}
-            onChange={() => {
-              // Turning it off mid-speech should also stop whatever is currently playing
-              if (voiceOutputEnabled) {
-                window.speechSynthesis && window.speechSynthesis.cancel();
-              }
-              setVoiceOutputEnabled((prev) => !prev);
-            }}
-          />
-          <label className="form-check-label small text-muted" htmlFor="voiceOutputToggle">
-            🔊 Voice replies
-          </label>
-        </div>
-      </div>
+    <div className="app-shell">
+      {/* top accent bar */}
+      <div className="top-accent-bar" />
 
-      <div
-        ref={scrollRef}
-        className="border rounded p-3 mt-4"
-        style={{ height: '480px', overflowY: 'auto', backgroundColor: '#f4faff' }}
-      >
-        {chatHistory.length === 0 && (
-          <p className="text-muted text-center mt-5">
-            Your secure conversation will appear here. Ask a query regarding bank policies or internet setups.
-          </p>
-        )}
+      <div className="app-body">
+        {/* --- LEFT SIDEBAR --- */}
+        <aside className="sidebar">
+          <div className="sidebar-section">
+            <div className="sidebar-eyebrow">Banking Assistant</div>
+            <div className="sidebar-title">Chat and Information Console</div>
+          </div>
 
-        {chatHistory.map((message, index) => {
-          const isUser = message.role === 'user';
-          return (
-            <div
-              key={index}
-              className={`d-flex mb-3 ${isUser ? 'justify-content-end' : 'justify-content-start'}`}
-            >
-              <div style={{ maxWidth: '75%' }}>
-                <div
-                  className={`p-2 rounded ${
-                    isUser ? 'bg-primary text-white' : 'bg-white border'
-                  }`}
-                >
-                  {message.text}
+          <div className="sidebar-divider" />
+
+          <div className="sidebar-section d-flex align-items-center justify-content-between">
+            <label className="sidebar-label mb-0" htmlFor="voiceOutputToggle">
+              🔊 Voice replies
+            </label>
+            <div className="form-check form-switch mb-0">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                role="switch"
+                id="voiceOutputToggle"
+                checked={voiceOutputEnabled}
+                onChange={() => {
+                  if (voiceOutputEnabled) {
+                    window.speechSynthesis && window.speechSynthesis.cancel();
+                  }
+                  setVoiceOutputEnabled((prev) => !prev);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="sidebar-divider" />
+
+          <div className="sidebar-section flex-grow-1" style={{ overflowY: 'auto' }}>
+            <div className="sidebar-label mb-2">Response Details</div>
+            {selectedMessage ? (
+              <>
+                <p className="small mb-3" style={{ color: '#ccc' }}>
+                  Confidence: {selectedMessage.confidence ? selectedMessage.confidence.toFixed(2) : '0.00'}
+                </p>
+
+                <div className="mb-2 fw-semibold small" style={{ color: '#999' }}>Source Documents</div>
+                <div className="d-flex flex-column gap-2 mb-3">
+                  {selectedMessage.sources && selectedMessage.sources.length > 0 ? (
+                    selectedMessage.sources.map((sourceItem, linkIndex) => {
+                      if (typeof sourceItem === 'string') {
+                        return (
+                          <span key={linkIndex} className="badge bg-secondary text-wrap p-2 text-start">
+                            {sourceItem}
+                          </span>
+                        );
+                      }
+                      return (
+                        <a
+                          key={linkIndex}
+                          href={sourceItem.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-warning text-decoration-none text-start"
+                        >
+                          📄 {sourceItem.name || "View Document Reference"}
+                        </a>
+                      );
+                    })
+                  ) : (
+                    <span className="small" style={{ color: '#888' }}>No source documents cited.</span>
+                  )}
                 </div>
 
-                {!isUser && (
-                  <div className="mt-1 position-relative">
-                    <div className="d-flex align-items-center justify-content-between">
-                      <small className="text-muted">
-                        Confidence: {message.confidence ? message.confidence.toFixed(2) : "0.00"}
-                      </small>
-                      <button
-                        className="btn btn-sm btn-outline-secondary" //For the options button on the AI response
-                        onClick={() => toggleMenu(index)}
-                        style = {{borderRadius: TypicalBorderRadius}}
-                        aria-haspopup="true"
-                        aria-expanded={openMenuIndex === index}
-                      >
-                        Options &#9662;
-                      </button>
-                    </div>
+                <button
+                  className="btn btn-sm btn-warning w-100 mb-2"
+                  onClick={() => handleEscalate(selectedIndex)}
+                >
+                  Escalate to Human
+                </button>
+                <button
+                  className="btn btn-sm btn-outline-light w-100"
+                  onClick={() => speakText(selectedMessage.text)}
+                >
+                  🔊 Read Aloud
+                </button>
+              </>
+            ) : (
+              <p className="small" style={{ color: '#888' }}>
+                Click an assistant response to see its confidence score and sources here.
+              </p>
+            )}
+          </div>
 
-                    {openMenuIndex === index && (
+          <div className="sidebar-divider" />
+
+          <button className="btn-clear-history" onClick={handleClearHistory}>
+            Clear chat history
+          </button>
+
+          {/* NEW BUTTON PLACED RIGHT UNDERNEATH */}
+          <button 
+            className="btn-clear-history" 
+            onClick={handleEraseMemory}
+            disabled={isLoading}
+            title="Erase AI conversational memory completely"
+          >
+            🧠 Erase AI Memory
+          </button>
+          
+        </aside>
+
+        {/* --- MAIN PANEL --- */}
+        <main className="main-panel">
+          <div ref={scrollRef} className="main-scroll">
+            {chatHistory.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon"></div>
+                <h1 className="empty-state-title">Intelligent Banking Assistant</h1>
+                <p className="empty-state-sub">
+                  Ask any relevant questions and I'll pull from the knowledge base.
+                </p>
+              </div>
+            ) : (
+              chatHistory.map((message, index) => {
+                const isUser = message.role === 'user';
+                const isSelected = !isUser && selectedIndex === index;
+                return (
+                  <div
+                      key={index}
+                      style={{
+                        display: 'flex',
+                        width: '100%',
+                        marginBottom: '1.5rem',
+                        justifyContent: isUser ? 'flex-end' : 'flex-start',
+                      }}
+                    >
                       <div
-                        className="border rounded bg-white shadow-sm mt-1 position-absolute"
-                        style={{ right: 0, zIndex: 10, minWidth: '200px' }}
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          maxWidth: '60%',
+                          alignItems: isUser ? 'flex-end' : 'flex-start',
+                        }}
                       >
-                        <button
-                          className="btn btn-sm btn-warning w-100 text-start rounded-0"
-                          onClick={() => handleEscalate(index)}
-                        >
-                          Escalate to Human
-                        </button>
-                        <button
-                          className="btn btn-sm btn-light w-100 text-start rounded-0"
-                          onClick={() => toggleSources(index)}
-                        >
-                          {visibleSourcesIndex === index
-                            ? 'Hide Source Documents'
-                            : 'Show Source Documents'}
-                        </button>
-                        {/* VOICE FEATURE ADDITION: replay this specific response with text-to-speech */}
-                        <button
-                          className="btn btn-sm btn-light w-100 text-start rounded-0"
-                          onClick={() => {
-                            speakText(message.text);
-                            setOpenMenuIndex(null);
+                        <small className="mb-1 fw-semibold" style={{ color: '#999' }}>
+                          {isUser ? 'You' : 'Assistant'}
+                        </small>
+                        <div
+                          className={`bubble-${isUser ? 'user' : 'ai'}`}
+                          onClick={() => !isUser && setSelectedIndex(index)}
+                          style={{
+                            padding: '10px 16px',
+                            cursor: !isUser ? 'pointer' : 'default',
+                            outline: isSelected ? '2px solid var(--brand-yellow)' : 'none',
                           }}
                         >
-                          🔊 Read Aloud
-                        </button>
-                      </div>
-                    )}
-
-                    {visibleSourcesIndex === index && (
-                      <div className="mt-2 p-2 border rounded bg-light">
-                        <h6 className="mb-2 text-dark font-weight-bold">Source Documents</h6>
-                        <div className="d-flex flex-wrap gap-2">
-                          {message.sources && message.sources.length > 0 ? (
-                            message.sources.map((sourceItem, linkIndex) => {
-                              // If it's an error fallback string rather than an object
-                              if (typeof sourceItem === 'string') {
-                                return (
-                                  <span key={linkIndex} className="badge bg-secondary text-wrap p-2 text-start d-block w-100">
-                                    {sourceItem}
-                                  </span>
-                                );
-                              }
-                              // Normal parsed object case
-                              return (
-                                <a
-                                  key={linkIndex}
-                                  href={sourceItem.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-xs btn-outline-primary text-decoration-none text-start p-1 px-2 m-1 bg-white bubble-source"
-                                  style={{ borderRadius: "6px", fontSize: "0.75rem", display: "inline-block" }}
-                                >
-                                  📄 {sourceItem.name || "View Document Reference"}
-                                </a>
-                              );
-                            })
-                          ) : (
-                            <span className="text-muted small">No source documents cited.</span>
-                          )}
+                          {message.text}
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                    </div>
+                );
+              })
+            )}
+
+            {isLoading && (
+              <p className="text-start ps-2 small fst-italic animate-pulse" style={{ color: '#888' }}>
+                Assistant is consulting database...
+              </p>
+            )}
+            {isListening && (
+              <p className="text-start ps-2 small fst-italic animate-pulse" style={{ color: '#e05252' }}>
+                🎤 Listening... speak now
+              </p>
+            )}
+          </div>
+
+          {/* --- PINNED INPUT BAR --- */}
+          <form onSubmit={handleSubmit} className="input-bar-wrapper">
+            <div className="input-bar">
+              <textarea
+                className="input-bar-textarea"
+                id="humanInput"
+                rows="1"
+                value={userInput}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={isLoading ? "Waiting for response..." : "Type your question here..."}
+                disabled={isLoading}
+              />
+              
+
+              {speechSupported && (
+                <button
+                  type="button"
+                  className="input-bar-icon-btn"
+                  onClick={handleMicToggle}
+                  disabled={isLoading}
+                  title={isListening ? "Stop listening" : "Speak your query"}
+                  style={{ color: isListening ? 'var(--brand-yellow)' : '#999' }}
+                >
+                  {isListening ? '🎧' : '🎙️'}
+                </button>
+              )}
+
+              <button
+                type="submit"
+                className="input-bar-send-btn"
+                disabled={isLoading}
+                title="Send"
+              >
+                ➤
+              </button>
             </div>
-          );
-        })}
-        {/* Visual Typing indicator block */}
-        {isLoading && (
-          <p className="text-muted text-start ps-2 small italic animate-pulse">
-            Assistant is consulting database...
-          </p>
-        )}
-        {/* VOICE FEATURE ADDITION: Visual listening indicator block, mirrors the typing indicator above */}
-        {isListening && (
-          <p className="text-danger text-start ps-2 small italic animate-pulse">
-            🎤 Listening... speak now
-          </p>
-        )}
+          </form>
+        </main>
       </div>
-
-      <form onSubmit={handleSubmit} className="mt-3">
-        <div
-          className="d-flex align-items-stretch"
-          style={{ width: "100%"}}
-        >
-          <textarea //for the text box where you enter user query
-            className="form-control flex-grow-1"
-            id="humanInput"
-            rows="1"
-            value={userInput}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown} // <-- KEYBIND LINKED HERE
-            placeholder={isLoading ? "Waiting for response..." : "Type your message..."}
-            disabled={isLoading} // Lock entry area during network call
-            style={{
-              width: "700px",
-              resize: "none",
-              borderRadius: TypicalBorderRadius
-            }}
-          />
-
-          {/* VOICE FEATURE ADDITION: mic button - click to start/stop dictating the query by voice */}
-          {speechSupported && (
-            <button
-              type="button" // not a submit button - this only toggles listening, it doesn't send the message
-              className={`btn ${isListening ? 'btn-danger' : 'btn-outline-secondary'} mx-1`}
-              onClick={handleMicToggle}
-              disabled={isLoading}
-              title={isListening ? "Stop listening" : "Speak your query"}
-              style={{
-                borderRadius: TypicalBorderRadius,
-                width: "50px",
-                height: "100%",
-                transform: "translateY(-6px)"
-              }}
-            >
-              {isListening ? '⏹️' : '🎤'}
-            </button>
-          )}
-
-          <button
-            type="submit" //for the send button
-            className="btn btn-primary"
-            disabled={isLoading}
-            style={{
-              borderRadius: TypicalBorderRadius,
-              width: "90px",
-              height: "100%",
-              transform: "translateY(-6px)"
-            }}
-          >
-            Send
-          </button>
-        </div>
-      </form>
-
     </div>
   );
 }

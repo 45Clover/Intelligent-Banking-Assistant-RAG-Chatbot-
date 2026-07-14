@@ -1,0 +1,227 @@
+:root {
+  --brand-yellow: #f4c430;
+  --brand-yellow-dark: #d9a824;
+  --brand-black: #1a1a1a;
+  --brand-white: #ffffff;
+  --brand-gray: #f5f5f5;
+}
+
+body {
+  font-family: 'Inter', -apple-system, system-ui, sans-serif;
+  margin: 0;
+}
+
+/* ---------- APP SHELL ---------- */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--brand-black);
+}
+
+.top-accent-bar {
+  height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, var(--brand-yellow-dark), var(--brand-yellow), #ffffff);
+  flex-shrink: 0;
+}
+
+.app-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ---------- SIDEBAR ---------- */
+.sidebar {
+  width: 300px;
+  flex-shrink: 0;
+  background-color: #111111;
+  border-right: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.sidebar-eyebrow {
+  color: var(--brand-yellow);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.sidebar-title {
+  color: var(--brand-white);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.sidebar-label {
+  color: #ccc;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background-color: #2a2a2a;
+  margin: 16px 0;
+  flex-shrink: 0;
+}
+
+.sidebar-section {
+  flex-shrink: 0;
+}
+
+.btn-clear-history {
+  background: transparent;
+  border: 1px solid #b03a3a;
+  color: #e05252;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+.btn-clear-history:hover {
+  background-color: rgba(224, 82, 82, 0.1);
+}
+
+/* ---------- MAIN PANEL ---------- */
+.main-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.main-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px 16px;
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-bottom: 60px;
+}
+
+.empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.empty-state-title {
+  color: var(--brand-white);
+  font-weight: 800;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.empty-state-sub {
+  color: #999;
+  max-width: 420px;
+  margin-top: 8px;
+}
+
+/* ---------- CHAT BUBBLES ---------- */
+.bubble-user {
+  background-color: var(--brand-yellow) !important;
+  color: var(--brand-black) !important;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  border-radius: 18px !important;
+  padding: 10px 16px !important;
+}
+
+.bubble-ai {
+  background-color: #2a2a2a !important;
+  color: var(--brand-white) !important;
+  border: 1px solid #3a3a3a !important;
+  letter-spacing: -0.01em;
+  border-radius: 18px !important;
+  padding: 10px 16px !important;
+}
+
+/* ---------- PINNED INPUT BAR ---------- */
+.input-bar-wrapper {
+  flex-shrink: 0;
+  padding: 16px 40px 28px;
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1f1f1f;
+  border: 1px solid #333;
+  border-radius: 999px;
+  padding: 6px 10px 6px 20px;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.input-bar:focus-within {
+  border-color: var(--brand-yellow);
+  box-shadow: 0 0 0 3px rgba(244, 196, 48, 0.25);
+}
+
+.input-bar-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--brand-white);
+  font-size: 0.95rem;
+  padding: 8px 0;
+  max-height: 120px;
+}
+
+.input-bar-textarea::placeholder {
+  color: #777;
+}
+
+.input-bar-textarea:disabled {
+  opacity: 0.5;
+}
+
+.input-bar-icon-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.1rem;
+  padding: 6px 8px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.input-bar-send-btn {
+  background-color: var(--brand-yellow);
+  color: var(--brand-black);
+  border: none;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease;
+}
+
+.input-bar-send-btn:hover:not(:disabled) {
+  background-color: var(--brand-yellow-dark);
+}
+
+.input-bar-send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

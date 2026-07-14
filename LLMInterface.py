@@ -64,7 +64,7 @@ class BankingBotResponse(BaseModel):
     confidence_score: float = Field(
         description="A value between 0.00 and 1.00 indicating how matching the context is to the query.")
     response: str = Field(
-        description="The actual answer text based strictly on the context, or the standard out-of-bounds safety message.")
+        description="The actual answer text based strictly on the context")
 
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
@@ -107,69 +107,33 @@ def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=
 
     return context, sources, best_distance, query_embedding
 
-def initialize_Ollm_interface():
-    pass #for quadrails
-#     llm = ChatOllama(
-#         model="llama3.2", # Connect to local Llama 3.2 model
-#         temperature=0.7,  # low temperature for deterministic output
-#         format="json", 
-#         num_predict=300, #caps generation length (caps how many tokens it can generate) — JSON answers don't need more
-#         num_ctx=2048, #bounds context so prompt eval doesn't blow up/grow unbounded
-#         keep_alive="30m", #keeps the model resident in Ollama so it isn't reloaded from disk between requests
-#     )
-
-#     # Initialize the output parser tied to our structure template
-#     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
-
-#     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
-#     prompt_template = ChatPromptTemplate.from_messages([
-#         ("system", (
-#             "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
-#             "Analyze the given user query against the provided Context Documents.\n\n"
-#             "CRITICAL INSTRUCTIONS:\n"
-#             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
-#             "2. If you've already answered the question before, respond with the same answer you gave before.\n"
-#             "3. If the intent is not 'out_of_bounds' I want you to say 'Consulting our official banking policies'\n"
-#             "4. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
-#             "Format your final output instructions:\n{format_instructions}\n\n"
-#             "User Profile:\n{user_profile}\n\n"
-#             "Context Documents:\n{context}"
-#         )),
-#         MessagesPlaceholder(variable_name="chat_history"),
-#         ("human", "{user_query}")
-#     ])
-
-#     # Add partial variable injecting format expectations into system prompt
-#     prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
-
-#     # Chain them together (Prompt -> LLM -> JSON Parser)
-#     llm_chain = prompt_template | llm | output_parser
-#     return llm_chain
-
  #AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg
-def initialize_Cllm_interface():
+def initialize_llm_interface():
     # Retrieve the API key from your environment or paste it here directly as a fallback string
-    api_key = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg")
+    # api_key = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg")
 
-    if not api_key:
-        raise ValueError(
-            "CRITICAL: GEMINI_API_KEY environment variable is missing!\n"
-            "Please set it in your terminal via:\n"
-            "  Windows (CMD):  set GEMINI_API_KEY=AIzaSyYourKeyHere...\n"
-            "  Windows (PS):   $env:GEMINI_API_KEY=\"AIzaSyYourKeyHere...\"\n"
-            "  Linux/macOS:    export GEMINI_API_KEY=\"AIzaSyYourKeyHere...\""
-        )
+    # if not api_key:
+    #     raise ValueError(
+    #         "CRITICAL: GEMINI_API_KEY environment variable is missing!\n"
+    #         "Please set it in your terminal via:\n"
+    #         "  Windows (CMD):  set GEMINI_API_KEY=AIzaSyYourKeyHere...\n"
+    #         "  Windows (PS):   $env:GEMINI_API_KEY=\"AIzaSyYourKeyHere...\"\n"
+    #         "  Linux/macOS:    export GEMINI_API_KEY=\"AIzaSyYourKeyHere...\""
+    #     )
 
     # --- UPDATED: Swapped to ChatGoogleGenerativeAI with gemini-3.5-flash ---
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-3.5-flash",
-        temperature=0.3,
-        google_api_key=api_key,         # Explicitly passing credentials to fix the crash
-        # Gemini handles JSON structure mapping natively via its response_format configuration
-        model_kwargs={
-            "response_format": {"type": "json_object"}
-        }
-    )
+    llm = ChatOllama(model = "llama3.2", temperature = 0.9)
+    # llm = ChatGoogleGenerativeAI(
+    #     model="gemini-3.5-flash",
+    #     temperature=0.9,
+    #     google_api_key=api_key,         # Explicitly passing credentials to fix the crash
+    #     # Gemini handles JSON structure mapping natively via its response_format configuration
+    #     model_kwargs={
+    #     "response_format": {"type": "json_object"},
+    #     # Force the model to bypass thinking steps for ultra-low latency
+    #     "thinking_config": {"thinking_budget": 1} 
+    # }
+    # )
 
     # Initialize the output parser tied to our structure template
     output_parser = JsonOutputParser(pydantic_object=BankingBotResponse)
@@ -177,16 +141,17 @@ def initialize_Cllm_interface():
     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
-            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
             "Analyze the given user query against the provided Context Documents.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
-            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
-            "4. If your response seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
-            "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
+            # "3. Provide an answer to the questiob by summarizing the provided context"
+            # "3. Just say the first 2 sentences you read in the document. DO NOT waste time reading the rest of the document"
+            # "3. Answer the question using ONLY the provided Context.\n" #If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            # "3. If your response seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            # "4. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "Format your final output instructions:\n{format_instructions}\n\n"
-            "User Profile:\n{user_profile}\n\n"
+            # "User Profile:\n{user_profile}\n\n"
             "Context Documents:\n{context}"
         )),
         MessagesPlaceholder(variable_name="chat_history"),
@@ -202,7 +167,13 @@ def initialize_Cllm_interface():
 
 
 # Memory management for user sessions using SQLite
-DB_CONNECTION_STRING = "sqlite:///chat_history.db"
+# Get the absolute path of the directory where LLMInterface.py lives
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# FORCE the database to exist in that exact directory
+PROFILE_DB_PATH = os.path.join(BASE_DIR, "chat_history.db")
+DB_CONNECTION_STRING = f"sqlite:///{PROFILE_DB_PATH}"
+# DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 
 # Reuse one engine across requests instead of letting SQLChatMessageHistory open a fresh
 # connection pool every single turn - opening/closing engines repeatedly was adding latency.
@@ -216,7 +187,7 @@ MAX_HISTORY_MESSAGES = 6
 
 # Personalization: user profile storage (preferred account type + recent past queries)
 # Reuses the same physical sqlite file as chat history, in its own table.
-PROFILE_DB_PATH = "chat_history.db"
+# PROFILE_DB_PATH = "chat_history.db"
 MAX_PAST_QUERIES = 5  # how many recent queries we keep for personalization context
 
 
@@ -258,6 +229,7 @@ def _get_profile_db_connection():
 def get_user_profile(session_id: str) -> dict:
     # Returns the stored personalization profile for a session, or sensible defaults if none exists yet.
     with _profile_conn_lock:
+        # FIXED: Calling this helper first ensures the tables are created if they are missing!
         conn = _get_profile_db_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -415,7 +387,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     # of embedding the same text twice.
     query_embedding = embedder.encode([current_query]).tolist()[0]
 
-    cached_result = find_cached_response(query_embedding)
+    cached_result = find_cached_response(query_embedding) #This is where we get similarity
     was_cache_hit = cached_result is not None
     t2b = time.time()
     print(f"[TIMING]   cache lookup: {t2b - t2:.2f}s")
@@ -432,9 +404,20 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     else:
         # RELEVANCE ADDITION: do the vector-store lookup once, and check how close the nearest
         # banking document actually is before deciding whether to build full context / call the LLM.
+
+        t1rag = time.time()
         rag_context, sources, best_distance, _ = retrieve_context(
             current_query, embedder, collection, top_k=top_k, query_embedding=query_embedding
         )
+        t2rag = time.time()
+        print(f"[TIMING]   RAG: {t2rag - t1rag:.2f}s")
+
+        # mock_rag_context = (
+        # "Document: rbi_savings_policy.pdf (Page 3)\n"
+        # "The minimum initial deposit required to open a Student Savings Account is $50. "
+        # "Account holders under 18 receive an introductory rate of 3.0% APY."
+        # )
+        # print("HERE IS THE BANKING INFO AHHAHSAD SIAHDJ KASDJSADSA",rag_context)
 
         if best_distance > IRRELEVANT_QUERY_DISTANCE_THRESHOLD:
             # --- RELEVANCE SHORT-CIRCUIT: nothing in the knowledge base is even remotely close
@@ -444,7 +427,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
             parsed_output = {
                 "intent": "out_of_bounds",
                 "confidence_score": 0.0,
-                "response": "I cannot find that information in our current policies."
+                "response": "IRRELEVANC" #I cannot find that information in our current policies."
             }
             sources = []  # no context was actually used to answer, so there's nothing to cite
         else:
@@ -453,15 +436,16 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
                     "context": rag_context, #input context
                     "chat_history": past_messages, #input chat history
                     "user_query": current_query, #input user query
-                    "user_profile": formatted_profile #input personalization profile
+                    # "user_profile": formatted_profile #input personalization profile
                 })
             except Exception as e:
                 print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
                 parsed_output = {
                     "intent": "out_of_bounds",
                     "confidence_score": 0.0,
-                    "response": "I cannot find that information in our current policies."
+                    "response": "ERROR"#I cannot find that information in our current policies."
                 }
+                raise e
     t3 = time.time()
     print(f"[TIMING]   RAG + LLM chain (or cache/relevance shortcut): {t3 - t2b:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
@@ -485,6 +469,65 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     parsed_output["sources"] = sources
 
     return parsed_output
+
+
+# Re-use your existing connection lock to keep threading safe
+# _profile_conn_lock = threading.Lock()
+
+# def delete_user_profile(session_id: str, db_path: str = "chat_history.db") -> dict:
+#     """
+#     Completely deletes all chat messages and profile details associated 
+#     with a given session_id from the database.
+    
+#     Returns:
+#         dict: A status report of the rows deleted.
+#     """
+#     status = {
+#         "session_id": session_id,
+#         "messages_deleted": 0,
+#         "profiles_deleted": 0,
+#         "success": False
+#     }
+    
+#     # Acquire the lock to avoid thread collision / database locking errors
+#     with _profile_conn_lock:
+#         try:
+#             # Set a 30-second timeout to handle pending concurrent write transactions safely
+#             conn = sqlite3.connect(db_path, timeout=30)
+            
+#             with conn: # Context manager automatically handles COMMIT on success / ROLLBACK on error
+#                 cursor = conn.cursor()
+                
+#                 # 1. Clear conversation history (LangChain's default SQL history table is named 'message_store')
+#                 cursor.execute("DELETE FROM message_store WHERE session_id = ?", (session_id,))
+#                 status["messages_deleted"] = cursor.rowcount
+                
+#                 # 2. Clear user personalization profile
+#                 cursor.execute("DELETE FROM user_profiles WHERE session_id = ?", (session_id,))
+#                 status["profiles_deleted"] = cursor.rowcount
+                
+#             status["success"] = True
+#             print(f"[DATABASE] Successfully cleared session {session_id}. "
+#                   f"Deleted {status['messages_deleted']} message(s) and {status['profiles_deleted']} profile record(s).")
+                  
+#         except sqlite3.OperationalError as e:
+#             print(f"[DATABASE ERROR] Failed to wipe session {session_id} because database was locked: {e}")
+#             status["error"] = str(e)
+#         except Exception as e:
+#             print(f"[DATABASE ERROR] An unexpected error occurred: {e}")
+#             status["error"] = str(e)
+            
+#     return status
+def delete_user_profile(session_id: str, db_path = "chat_history.db") -> None:
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        print("Entire database deleted. It will automatically rebuild empty tables on the next run.")
+    # with _profile_conn_lock:
+    #     conn = _get_profile_db_connection()
+    #     cursor = conn.cursor()
+    #     cursor.execute("DELETE FROM user_profiles WHERE session_id = ?", (session_id,))
+    #     conn.commit()
+
 
 
 ##Generating secret tokens for anonymous guest users to access the banking bot without creating an account
@@ -515,7 +558,7 @@ runTest = True #set to true if you want to test the LLM interface locally withou
 
 if __name__ == "__main__" and runTest == True:
     print("Initializing structured local LLM interface layer...")
-    banking_bot = initialize_Cllm_interface()
+    banking_bot = initialize_llm_interface()
     memory_buffer = []
 
     embedder = SentenceTransformer("all-MiniLM-L6-v2")
