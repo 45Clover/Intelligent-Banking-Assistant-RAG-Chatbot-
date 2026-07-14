@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="source locating was broken" />
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="still fixing language insanely hard btw">
+      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -390,7 +392,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784068162518</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="still fixing language insanely hard btw">
+      <option name="closed" value="true" />
+      <created>1784068700160</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1784068700160</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -417,7 +427,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Adding a base chunker , it's the template to the RecursiveTokenChunker" />
     <MESSAGE value="fixed testing structure" />
     <MESSAGE value="adding fixedtokenChunker its provides the textsplitter class for the recursiveTokenChunker  , chunking tiktokens" />
     <MESSAGE value="Adding utils(just defines language) and the actual recursive token chunker including  the test ... i made each awhile ago, just not used pushing on pycharm" />
@@ -442,7 +451,8 @@
     <MESSAGE value="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant" />
     <MESSAGE value="ive been test the multilingual response and im still updating it slowing ill lock in and be done by tonight atleast" />
     <MESSAGE value="source locating was broken" />
-    <option name="LAST_COMMIT_MESSAGE" value="source locating was broken" />
+    <MESSAGE value="still fixing language insanely hard btw" />
+    <option name="LAST_COMMIT_MESSAGE" value="still fixing language insanely hard btw" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>

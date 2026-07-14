@@ -50,7 +50,60 @@ def detect_bank_from_filename(filename: str) -> str:
         return "rbi"
     else:
         return "sbi"  # default fallback for generic/unlabeled FAQ files
+# Hardcoded fallback messages per language — used only if the LLM fails
+# to comply with query_language even after a forced retry.
+LANGUAGE_FALLBACK_RESPONSES = {
+    "en": "I'm unable to process that request right now. Please try again or press 'Human Escalation'.",
+    "fr": "Je ne peux pas traiter cette demande pour le moment. Veuillez réessayer ou appuyer sur 'Escalade humaine'.",
+}
 
+def _detect_output_language(text: str) -> str:
+    try:
+        result = detect_langs(text)[0]
+        if result.lang == "fr":
+            return "fr"
+        return "en"
+    except:
+        return "en"
+
+def enforce_response_language(parsed_output: dict, query_language: str, banking_bot_chain,
+                               rag_context: str, past_messages: list, current_query: str,
+                               formatted_profile: str) -> dict:
+    response_text = parsed_output.get("response", "")
+    actual_lang = _detect_output_language(response_text)
+
+    if actual_lang == query_language:
+        return parsed_output  # compliant, nothing to do
+
+    print(f"[LANGUAGE ENFORCE] Mismatch: wanted={query_language}, got={actual_lang}. Retrying with forced instruction.")
+
+    # Retry once with a blunt, impossible-to-miss instruction appended directly to the query itself,
+    # since burying language rules in the system prompt clearly isn't holding under this model.
+    forced_note = (
+        f"[SYSTEM OVERRIDE: You MUST answer ONLY in "
+        f"{'French' if query_language == 'fr' else 'English'}. Any other language is a failure.] "
+    )
+
+    try:
+        retry_output = banking_bot_chain.invoke({
+            "context": rag_context,
+            "chat_history": past_messages,
+            "user_query": forced_note + current_query,
+            "user_profile": formatted_profile,
+            "query_language": query_language
+        })
+        retry_lang = _detect_output_language(retry_output.get("response", ""))
+        if retry_lang == query_language:
+            print("[LANGUAGE ENFORCE] Retry succeeded.")
+            return retry_output
+    except Exception as e:
+        print(f"[LANGUAGE ENFORCE] Retry failed: {e}")
+
+    # Retry also failed — never show the user a wrong-language answer.
+    print("[LANGUAGE ENFORCE] Retry still non-compliant. Using hardcoded fallback.")
+    parsed_output["response"] = LANGUAGE_FALLBACK_RESPONSES.get(query_language, LANGUAGE_FALLBACK_RESPONSES["en"])
+    parsed_output["confidence_score"] = 0.0
+    return parsed_output
 
 def get_source_url(filename: str, category: str) -> str:
     if category == "policy":
@@ -324,7 +377,13 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
             "confidence_score": 0.0,
             "response": "I cannot find that information in our current policies."
         }
+    parsed_output = enforce_response_language(
+        parsed_output, query_language, banking_bot_chain,
+        rag_context, past_messages, current_query, formatted_profile
+    )
 
+    if "response" in parsed_output:
+        parsed_output["response"] = html.unescape(parsed_output["response"])
     t3 = time.time()
     print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
