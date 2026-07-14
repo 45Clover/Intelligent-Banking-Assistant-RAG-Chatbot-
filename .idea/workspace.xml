@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="ive been test the multilingual response and im still updating it slowing ill lock in and be done by tonight atleast">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/server.py" afterDir="false" />
-    </list>
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="source locating was broken" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -385,7 +382,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784067025094</updated>
     </task>
-    <option name="localTasksCounter" value="38" />
+    <task id="LOCAL-00038" summary="source locating was broken">
+      <option name="closed" value="true" />
+      <created>1784068162518</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1784068162518</updated>
+    </task>
+    <option name="localTasksCounter" value="39" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -412,7 +417,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="added test run for PyPDF2 and a txt file to show how it works based on the structure of the FAQ's pdfs" />
     <MESSAGE value="Adding a base chunker , it's the template to the RecursiveTokenChunker" />
     <MESSAGE value="fixed testing structure" />
     <MESSAGE value="adding fixedtokenChunker its provides the textsplitter class for the recursiveTokenChunker  , chunking tiktokens" />
@@ -437,7 +441,8 @@
     <MESSAGE value="updated the readme" />
     <MESSAGE value="ahd issues with llm reponses fixed but testing still going on .. we have to keep testing so the chat history is consistant" />
     <MESSAGE value="ive been test the multilingual response and im still updating it slowing ill lock in and be done by tonight atleast" />
-    <option name="LAST_COMMIT_MESSAGE" value="ive been test the multilingual response and im still updating it slowing ill lock in and be done by tonight atleast" />
+    <MESSAGE value="source locating was broken" />
+    <option name="LAST_COMMIT_MESSAGE" value="source locating was broken" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
