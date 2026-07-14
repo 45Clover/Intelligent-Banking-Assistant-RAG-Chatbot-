@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="just ran some tests so see responses Dn seems fine .. LLM left to update">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/chunks_with_embeddings.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/chunks_with_embeddings.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Chunking/embed_chunks.py" beforeDir="false" afterPath="$PROJECT_DIR$/Chunking/embed_chunks.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LLMInterface.py" beforeDir="false" afterPath="$PROJECT_DIR$/LLMInterface.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chat_history.db" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history.db" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/server.py" beforeDir="false" afterPath="$PROJECT_DIR$/server.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -348,7 +344,15 @@
       <option name="project" value="LOCAL" />
       <updated>1783892633560</updated>
     </task>
-    <option name="localTasksCounter" value="33" />
+    <task id="LOCAL-00033" summary="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild.">
+      <option name="closed" value="true" />
+      <created>1783915081910</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1783915081910</updated>
+    </task>
+    <option name="localTasksCounter" value="34" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -398,7 +402,8 @@
     <MESSAGE value="Major changes to the ui you should see theme when you run your own test .. i wont lie this was the hardest part .. you should see that i split the screen also made it look text based , also when you select the text it changes the source ... you understand ... i havent tested voice input though .. ill update the db aswell later , only db and efficiency left the multilingual left" />
     <MESSAGE value="massive db update included more FAQs .... llm still slow though only hurdle left" />
     <MESSAGE value="just ran some tests so see responses Dn seems fine .. LLM left to update" />
-    <option name="LAST_COMMIT_MESSAGE" value="just ran some tests so see responses Dn seems fine .. LLM left to update" />
+    <MESSAGE value="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild." />
+    <option name="LAST_COMMIT_MESSAGE" value="added multilingual system .. efficiency left ... and i added some other changes that make the french response more fuild." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
