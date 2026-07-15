@@ -1,6 +1,6 @@
 # Intelligent Banking Assistant(RAG Chatbot)-
 Team members of 
-cache Me outside,  
+cache me outside:  
 Aseye Ekpe, 
 Christopher Obinwa ,
 Lebohang Tangu. 
@@ -10,7 +10,9 @@ Josh Delos Santos
   <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWN1bjhtcm12djZnOGp4ZDJjMTlqdXMwenB4M21uNHNheXcxN2RyNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/NG9bWrAujM2YlX1Gv9/giphy.gif" width="300" alt="demo gif" />
 </p>
 
-An automated, production-grade Retrieval-Augmented Generation (RAG) banking assistant built for HCLTech Bank. The system securely classifies user intent, queries an indexed vector database for compliant answers, tracks session-based conversational history using SQLite, builds dynamic user profiles for real-time personalization, and implements multi-tier guardrails (semantic query caching, relevance short-circuits, and confidence mapping).
+## What is it
+
+A Retrieval-Augmented Generation (RAG) chatbot built for a fictional "HCLTech Bank" that answers customer queries by grounding responses in real banking documents rather than relying purely on the LLM's own knowledge. It handles intent classification, retrieves context from an indexed vector database, persists conversation state via SQLite, builds dynamic user profiles for personalization, and layers in multi-tier guardrails to prevent hallucination and control token spend.
 
 ## Architecture
 
