@@ -18,14 +18,14 @@ A Retrieval-Augmented Generation (RAG) chatbot built for a fictional "HCLTech Ba
 
 ![RAG pipeline architecture](doc/architecture.png)
 
-## 🚀 Key Features
+## 🔑 Key Features
 
-- **Multilingual Semantic Search**: Uses sentence-transformers (`paraphrase-multilingual-MiniLM-L12-v2`) to accurately parse and retrieve banking context across multiple languages natively.
+- **Multilingual Semantic Search**: Uses sentence-transformers such as `paraphrase-multilingual-MiniLM-L12-v2` (a sentence-transformer embedding model) so retrieval works across languages natively, not just English.
 - **Dual-Layer Guardrails**:
   - **Semantic Cache**: Instant 0ms duplicate answer lookups using cosine similarity thresholds (≥ 0.95).
-  - **Distance Cutoff**: Automated out-of-bounds short-circuiting for off-topic chatter before calling the LLM.
+  - **Distance Cutoff**: Automated out-of-bounds short-circuiting that filters off-topic input before it ever reaches the LLM, saving both latency and API cost.
 - **Persistent SQLite Tracking**: Thread-safe state tracking that manages both rolling conversation history and stateful user profiles (e.g., preferred account tracking).
-- **Enterprise LLM Processing**: Seamless integration with Gemini (`gemini-3.5-flash`) forcing guaranteed structured JSON schema compliance.
+- **Structured LLM Processing**: Seamless integration of Gemini (`gemini-3.5-flash`) with enforced JSON schema compliance, so responses are always machine-parseable rather than freeform text.
 - **Secure API Design**: Protected FastAPI endpoints requiring signed, cryptographically valid Bearer JWTs for all operations.
 
 ## 🛠️ Tech Stack
@@ -46,7 +46,7 @@ A Retrieval-Augmented Generation (RAG) chatbot built for a fictional "HCLTech Ba
 ├── LLMInterface.py            # Main architecture (RAG orchestration, cache, profile engines)
 ├── server.py                  # API controller endpoints (FastAPI routing, JWT auth, guardrails)
 ├── chat_history.db            # SQLite database file tracking history & caching (auto-generated)
-└── README.md                  # Project documentation
+└── README.md                  # Project documentation (This file!)
 ```
 
 ## ⚙️ Setup & Installation
@@ -75,7 +75,7 @@ export JWT_SECRET_KEY="your_cryptographically_secure_32_byte_string_minimum"
 
 ### 3. Database ingestion setup
 
-Before launching the service, ensure your ingestion script has built a fresh vector database index initialized explicitly with cosine distance metrics:
+Before running the server, you need to load your banking documents into the vector database, set up to compare things using cosine distance (a way of measuring how similar two pieces of text are):
 
 ```python
 collection = chroma_client.create_collection(
@@ -92,7 +92,7 @@ To start the backend application server listening for incoming UI payload reques
 python -m uvicorn server:app --reload --port 8000
 ```
 
-> **Note:** drop `--reload` for demo/production runs — it restarts the server whenever ChromaDB or SQLite files change during normal operation.
+> **Note:** drop `--reload` for demo/production runs — it restarts the server whenever ChromaDB or SQLite files change during normal operation, which you don't want mid-demo.
 
 ## 📡 API Architecture Overview
 
@@ -100,7 +100,7 @@ python -m uvicorn server:app --reload --port 8000
 
 **Endpoint:** `GET /api/init-chat`
 
-Returns a securely signed, anonymous guest authentication JWT token to track session state.
+Returns a securely signed, anonymous guest authentication JWT token so the system can track your session.
 
 **Response:**
 
@@ -114,9 +114,9 @@ Returns a securely signed, anonymous guest authentication JWT token to track ses
 
 **Endpoint:** `POST /api/chat`
 
-**Headers required:** `Authorization: Bearer <JWT_TOKEN>`
+**Header required:** `Authorization: Bearer <JWT_TOKEN>`
 
-**Request payload:**
+**What you send:**
 
 ```json
 {
@@ -145,5 +145,5 @@ Returns a securely signed, anonymous guest authentication JWT token to track ses
 
 ## 🛡️ Integrated Guardrails & Fallbacks
 
-- **Financial harm and ambiguity guard**: If the internal validation framework flags an execution turn with a low confidence score (< 0.2), the response is intercepted and gracefully replaced with a deterministic risk warning message.
+- **Financial harm and ambiguity guard**: If the internal validation framework flags an execution turn with a confidence score below 0.2, the response is intercepted and replaced with a deterministic risk-warning message rather than surfacing a low-confidence answer.
 - **Out-of-bounds interception**: If a user submits input completely unrelated to banking (e.g., general cooking tips), the query's vector distance trips above `IRRELEVANT_QUERY_DISTANCE_THRESHOLD` (set to 1.0), cleanly returning an immediate out-of-bounds fallback message without incurring unnecessary execution overhead or cloud token costs.
