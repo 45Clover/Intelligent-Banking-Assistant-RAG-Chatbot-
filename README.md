@@ -12,7 +12,7 @@ Josh Delos Santos
 
 ## What is it
 
-A Retrieval-Augmented Generation (RAG) chatbot built for a fictional "HCLTech Bank" that answers customer queries by grounding responses in real banking documents rather than relying purely on the LLM's own knowledge. It handles intent classification, retrieves context from an indexed vector database, persists conversation state via SQLite, builds dynamic user profiles for personalization, and layers in multi-tier guardrails to prevent hallucination and control token spend.
+A Retrieval-Augmented Generation (RAG) chatbot that answers customer queries by grounding responses in real banking documents rather than relying purely on the LLM's own knowledge. It handles intent classification, retrieves context from an indexed vector database, persists conversation state via SQLite, builds dynamic user profiles for personalization, and layers in multi-tier guardrails to prevent hallucination and control token spend.
 
 ## Architecture
 
