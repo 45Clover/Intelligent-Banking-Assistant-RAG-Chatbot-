@@ -70,8 +70,8 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         existing_guest_id = decoded_payload["sub"]
 
         t0 = time.time()
-        rag_context, sources = retrieve_context(payload.user_query, embedder, collection,
-                                                top_k=3)  # identify the user to get their specific chat history
+        # rag_context, sources, ab, cd = retrieve_context(payload.user_query, embedder, collection,
+        #                                         top_k=3)  # identify the user to get their specific chat history
 
         query_lang = detect_query_language(payload.user_query)
 
@@ -82,7 +82,9 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
             session_id=existing_guest_id,  # we want the output that is tied to a specific user
             current_query=payload.user_query,  # input user query
             banking_bot_chain=banking_bot,  # input the initialized LLM chain
-            rag_context=rag_context,  # input the retrieved context
+            embedder=embedder,
+            collection=collection,
+            # rag_context=rag_context,  # input the retrieved context
             query_language=query_lang  # input the detected language of the query
         )
         t2 = time.time()
@@ -94,9 +96,10 @@ async def chat_endpoint(payload: ChatPayload, authorization: str = Header(None))
         return {
             "response": out.get("response", "No response generated."),
             "confidence_score": out.get("confidence_score", 0.0),
-            "sources": sources,  # <-- from retrieve_context(), not from out
+            "sources": out.get("sources", []), # Extracted directly from the unified process output
             "user_profile": out.get("user_profile", {"preferred_account_type": None, "past_queries": []})
         }
+
 
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
