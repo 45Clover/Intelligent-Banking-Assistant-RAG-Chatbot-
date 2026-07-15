@@ -1,12 +1,13 @@
-
+import os
 import pickle
 import chromadb
 
 #  CONFIG
-DB_PATH = "chroma_db"          # folder where the DB will live on disk
-COLLECTION_NAME = "banking_kb" # name of your knowledge base collection
-PKL_PATH = "chunks_with_embeddings.pkl"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+DB_PATH = os.path.join(BASE_DIR, "chroma_db")          # folder where the DB will live on disk
+COLLECTION_NAME = "banking_kb"                         # name of your knowledge base collection
+PKL_PATH = os.path.join(BASE_DIR, "chunks_with_embeddings.pkl") # Forces the script to look in its own folder
 
 def load_chunks(path):
     with open(path, "rb") as f:
