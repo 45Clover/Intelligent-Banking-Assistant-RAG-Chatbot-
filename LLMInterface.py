@@ -107,8 +107,19 @@ def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=
 
     return context, sources, best_distance, query_embedding
 
- #AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg
-def initialize_llm_interface():
+ 
+import re
+
+def clean_json_markdown(ai_message) -> str:
+    """Extracts raw JSON content from markdown code fences if present."""
+    text = ai_message.content
+    # Strip markdown backticks if Gemini wrapped it in ```json ... ```
+    match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+    if match:
+        return match.group(1)
+    return text
+
+def initialize_llm_interface(): #AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg
     # Retrieve the API key from your environment or paste it here directly as a fallback string
     # api_key = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LvQJ36rGezPF4eOkn4KVCKhodsItlszUw-50mfD1SfBg")
 
@@ -162,7 +173,7 @@ def initialize_llm_interface():
     prompt_template = prompt_template.partial(format_instructions=output_parser.get_format_instructions())
 
     # Chain them together (Prompt -> LLM -> JSON Parser)
-    llm_chain = prompt_template | llm | output_parser
+    llm_chain = prompt_template | llm | clean_json_markdown | output_parser
     return llm_chain
 
 
@@ -409,6 +420,7 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         rag_context, sources, best_distance, _ = retrieve_context(
             current_query, embedder, collection, top_k=top_k, query_embedding=query_embedding
         )
+        # rag_context = clean_text(rag_context)
         t2rag = time.time()
         print(f"[TIMING]   RAG: {t2rag - t1rag:.2f}s")
 
@@ -470,6 +482,22 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
 
     return parsed_output
 
+# import re
+
+# def clean_text(text: str) -> str:
+#     """
+#     Strips useless noise, extra whitespaces, and repetitive symbols 
+#     often left behind by PDF parsers.
+#     """
+#     # 1. Replace multiple consecutive newlines or spaces with a single space/newline
+#     text = re.sub(r'\n+', '\n', text)
+#     text = re.sub(r' +', ' ', text)
+    
+#     # 2. Remove typical PDF garbage (like raw page numbers, footers, or repeating dashes/underscores)
+#     text = re.sub(r'[-_]{3,}', '', text)  # removes lines of dashes like '---'
+#     text = re.sub(r'(Page\s+\d+\s+of\s+\d+|Confidential|HCLTech Bank)', '', text, flags=re.IGNORECASE)
+    
+#     return text.strip()
 
 # Re-use your existing connection lock to keep threading safe
 # _profile_conn_lock = threading.Lock()
