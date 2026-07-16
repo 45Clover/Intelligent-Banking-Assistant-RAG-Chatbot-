@@ -1,0 +1,290 @@
+import json
+import os
+import time
+
+# --- IMPORT YOUR ACTUAL SYSTEM ---
+from LLMInterface import (
+    initialize_llm_interface, 
+    process_user_turn_with_sqlite
+)
+from sentence_transformers import SentenceTransformer
+import chromadb
+
+# --- INITIALIZATION ---
+print("[INIT] Loading banking bot and database...")
+banking_bot = initialize_llm_interface()
+embedder = SentenceTransformer("all-MiniLM-L6-v2")
+chroma_client = chromadb.PersistentClient(path="Chunking/chroma_db")
+collection = chroma_client.get_or_create_collection(name="banking_kb")
+
+def load_test_cases(filename="test_rag.json"):
+    # if not os.path.exists(filename):
+    #     raise FileNotFoundError(f"Missing {filename}! Make sure it is in this folder.")
+    # with open(filename, "r", encoding="utf-8") as f:
+    #     return json.load(f)
+    return [
+        {
+            "query": "What is an Interac e-Transfer?",
+            "expected_output": "Interac e-Transfer is a simple, secure, fast, and convenient way to send, request, and receive money between eligible Canadian bank accounts using online banking with a recipient's email address or mobile number.[cite: 1]"
+        },
+        {
+            "query": "Can I send or receive an Interac e-Transfer in US dollars?",
+            "expected_output": "No. Funds sent by Interac e-Transfer must be in Canadian dollars and must be deposited into an account at a Canadian Financial Institution.[cite: 1]"
+        },
+        {
+            "query": "Which types of bank accounts can be used for sending and receiving an Interac e-Transfer?",
+            "expected_output": "The eligible SBI Canada Bank accounts are Checking Accounts, Saving Accounts, Super saver Accounts, and Premium Savings Accounts.[cite: 1]"
+        },
+        {
+            "query": "What are the rules and guidelines for a security answer?",
+            "expected_output": "The security answer must be one word, must not contain any blank spaces, is not case sensitive, accepts both letters and/or numbers, cannot contain special characters, and must be kept strictly confidential.[cite: 1]"
+        },
+        {
+            "query": "What is the difference between a cancelled payment and reclaim of funds?",
+            "expected_output": "A cancelled payment is when you request a stop payment. Reclaim of funds happens when the transfer is undeliverable due to an invalid email, incorrect security answer, recipient decline, or expiry after 30 days.[cite: 1]"
+        },
+        {
+            "query": "Is it safe to send money by email through Interac e-Transfer?",
+            "expected_output": "Yes, because the money never travels by email. Email is only used for notifications and instructions, while the actual money is transferred through secure bank payment networks.[cite: 1]"
+        },
+        {
+            "query": "What are the steps to send money using the SBICA YONO App?",
+            "expected_output": "Log into the SBICA YONO App, go to 'Fund Transfer', select 'Interac e-Transfer', click 'Send Interac e-Transfer', provide the transaction details, click 'Confirm', and enter the OTP sent to your mobile or email.[cite: 1]"
+        },
+        {
+            "query": "How do I send money using SBI Canada Internet Banking?",
+            "expected_output": "Login to SBIC Internet Banking, select the 'Interac e-Transfer' menu, enter your transaction password, click 'Send Money', select your CAD operative account, choose the contact, enter the amount, and confirm with your transaction password.[cite: 1]"
+        },
+        {
+            "query": "How do I add a contact on the SBICA YONO App?",
+            "expected_output": "Login, go to Fund Transfer > Interac e-Transfer > Manage Contacts, click the '+' button, enter their details, select a security question and answer, click 'Next', and confirm using the OTP.[cite: 1]"
+        },
+        {
+            "query": "What are the steps to add a contact on Internet Banking?",
+            "expected_output": "Login, go to Transactions > Interac e-Transfer > Manage Contacts, click 'Add Contact', provide the contact details, select a security question and answer, accept the Terms & Conditions, and confirm with your transaction password.[cite: 1]"
+        },
+        {
+            "query": "Is there a service charge for using Interac e-Transfer to send money?",
+            "expected_output": "No. SBI Canada Bank offers Interac e-Transfers for free, and no service charge is levied.[cite: 1]"
+        },
+        {
+            "query": "Can I send money by Interac e-Transfer to someone outside of Canada?",
+            "expected_output": "No. Money sent by Interac e-Transfer must be in Canadian dollars and must be deposited into a Canadian financial institution account. For recipients outside Canada, you must use our remittance service.[cite: 1]"
+        },
+        {
+            "query": "What is the maximum transaction limit for sending funds?",
+            "expected_output": "The maximum sending limit is $3,000 per transaction.[cite: 1]"
+        },
+        {
+            "query": "What is the daily limit for sending money?",
+            "expected_output": "The daily limit for sending an Interac e-Transfer is $3,000.[cite: 1]"
+        },
+        {
+            "query": "What is the weekly sending limit?",
+            "expected_output": "The sending limit is $10,000 per 7-day period.[cite: 1]"
+        },
+        {
+            "query": "What is the monthly sending limit?",
+            "expected_output": "The sending limit is $20,000 per 30-day period.[cite: 1]"
+        },
+        {
+            "query": "What happens right after I send money via Interac e-Transfer?",
+            "expected_output": "The recipient will receive an automated email from Interac containing instructions on how to deposit the money you sent.[cite: 1]"
+        },
+        {
+            "query": "How do I cancel an Interac e-Transfer?",
+            "expected_output": "If the recipient has not deposited it, go to 'Interac e-Transfer' in your Online Banking or YONO App, click 'View Transaction History', select the transaction, and click 'Cancel'.[cite: 1]"
+        },
+        {
+            "query": "Is there an expiry date on my Interac e-Transfer?",
+            "expected_output": "Yes, the Interac e-Transfer will expire in 30 days. You will receive an email on how to reclaim the funds if it expires.[cite: 1]"
+        },
+        {
+            "query": "What happens if I do not reclaim expired funds within 30 days?",
+            "expected_output": "If you do not reclaim the funds within 30 days of expiry, the transfer is automatically cancelled and returned to the originating account.[cite: 1]"
+        },
+        {
+            "query": "What are the steps for depositing money sent by Interac e-Transfer?",
+            "expected_output": "Click the email link, choose accept, select SBI Canada Bank, log in, provide the correct security answer, select your deposit account, and confirm using your transaction password.[cite: 1]"
+        },
+        {
+            "query": "Can I receive money on the YONO SBICA App?",
+            "expected_output": "No, the functionality to receive money sent through Interac e-transfer is currently available only on SBIC online banking.[cite: 1]"
+        },
+        {
+            "query": "Is there a service fee for receiving money?",
+            "expected_output": "No, SBI Canada Bank offers the service of receiving Interac e-Transfers free of charge.[cite: 1]"
+        },
+        {
+            "query": "What are the single transaction and daily receiving limits?",
+            "expected_output": "The receiving limit is $10,000 per transaction and $10,000 daily.[cite: 1]"
+        },
+        {
+            "query": "What is the weekly limit for receiving funds?",
+            "expected_output": "The receiving limit is $70,000 per 7-day period.[cite: 1]"
+        },
+        {
+            "query": "What is the monthly limit for receiving funds?",
+            "expected_output": "The receiving limit is $300,000 per 30-day period.[cite: 1]"
+        },
+        {
+            "query": "Will I get reminders to deposit outstanding money?",
+            "expected_output": "Yes, you will receive automated email reminders 7, 14, 21, and 28 days after the transfer was initiated.[cite: 1]"
+        },
+        {
+            "query": "What is Request Money?",
+            "expected_output": "It is an Interac feature allowing you to request money you are owed. Recipients are notified by email and can accept or decline the request to automatically deposit funds into your account.[cite: 1]"
+        },
+        {
+            "query": "How do I request money using Interac e-Transfer?",
+            "expected_output": "Log in to Online Banking or YONO App, select 'Request Money' in the Interac e-Transfer section, choose the contact, enter the amount, and choose your credit account.[cite: 1]"
+        },
+        {
+            "query": "Are there limits for requesting money?",
+            "expected_output": "Yes, there is a transaction limit of $3,000 while requesting money.[cite: 1]"
+        },
+        {
+            "query": "How do I cancel a money request?",
+            "expected_output": "Log in, go to transaction history, and select the pending request to cancel it. You cannot cancel it once it has been fulfilled.[cite: 1]"
+        },
+        {
+            "query": "How long are outstanding money requests valid for?",
+            "expected_output": "Outstanding requests are valid for a default expiry period of 30 days from the date of the request.[cite: 1]"
+        },
+        {
+            "query": "What is Interac e-Transfer Autodeposit?",
+            "expected_output": "Autodeposit is a feature that directly deposits incoming transfers into your CAD bank account without needing a security question and answer.[cite: 1]"
+        },
+        {
+            "query": "How do I register for Autodeposit?",
+            "expected_output": "Go to 'Autodeposit' in the Interac section, enter your email, select your deposit account, accept acknowledgements, and verify via the email link Interac sends you.[cite: 1]"
+        },
+        {
+            "query": "Why am I not receiving the Autodeposit verification email?",
+            "expected_output": "Check your junk email folder first. If it is still missing, try to re-register the Autodeposit through your online banking.[cite: 1]"
+        },
+        {
+            "query": "How many email addresses can I register for Autodeposit?",
+            "expected_output": "You can set up Autodeposit for only one account with SBI Canada Bank using your email address, and it cannot be registered with any other financial institution.[cite: 1]"
+        },
+        {
+            "query": "How do I de-register my Autodeposit?",
+            "expected_output": "In the Autodeposit section, click 'active' beside the registered email address, click 'Delete', and confirm 'Yes'.[cite: 1]"
+        },
+        {
+            "query": "How do I contact SBI Canada Bank support?",
+            "expected_output": "You can email onlinesupport@sbicanada.com or call their Toll-Free Number at 1-866-724-2669.[cite: 1]"
+        },
+        {
+            "query": "Puis-je envoyer un virement Interac dans une autre devise que le dollar canadien ?",
+            "expected_output": "Non. Les fonds envoyés par virement Interac doivent être en dollars canadiens et doivent être déposés dans un compte d'une institution financière canadienne.[cite: 1]"
+        },
+        {
+            "query": "Y a-t-il des frais de service pour envoyer de l'argent par virement Interac ?",
+            "expected_output": "Non. La SBI Canada Bank propose les virements Interac gratuitement, sans aucun frais de service.[cite: 1]"
+        },
+        {
+            "query": "Comment puis-je désenregistrer le dépôt automatique (Autodeposit) ?",
+            "expected_output": "Allez dans la section Autodeposit, cliquez sur 'active' à côté de l'adresse e-mail, puis cliquez sur 'Delete' et confirmez par 'Oui'.[cite: 1]"
+        },
+        {
+            "query": "Comment faire une tarte aux pommes ?",
+            "expected_output": "I cannot find that information in our current policies.[cite: 1]"
+        }
+        ]
+
+# --- DETERMINISTIC EVALUATION METRICS ---
+def calculate_word_overlap(text1: str, text2: str) -> float:
+    """Calculates simple Jaccard similarity (word overlap ratio) between two texts."""
+    words1 = set(text1.lower().split())
+    words2 = set(text2.lower().split())
+    if not words1 or not words2:
+        return 0.0
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+    return len(intersection) / len(union)
+
+def evaluate_guardrail(query: str, response: str, expected: str) -> bool:
+    """
+    Checks if an out-of-bounds query correctly triggered the safety fallback 
+    instead of leaking information.
+    """
+    safety_triggers = ["cannot find", "not in our current policies", "je ne trouve pas"]
+    is_out_of_bounds = any(trigger in expected.lower() for trigger in safety_triggers)
+    
+    if is_out_of_bounds:
+        # Pass if the bot successfully refused to answer
+        return any(trigger in response.lower() for trigger in safety_triggers)
+    return True # Skip safety verification for normal banking queries
+
+# --- RUN THE EVALUATION ENGINE ---
+def run_evaluation():
+    test_cases = load_test_cases()
+    results = []
+    
+    passed_count = 0
+    total_tests = len(test_cases)
+    
+    print(f"\n[START] Starting evaluation on {total_tests} test cases...")
+    print("-" * 60)
+
+    for idx, case in enumerate(test_cases, 1):
+        query = case["query"]
+        expected = case["expected_output"]
+        
+        # 1. Run through your actual RAG system
+        start_time = time.time()
+        
+        bot_output = process_user_turn_with_sqlite(
+            session_id=f"eval_session_{idx}",
+            current_query=query,
+            banking_bot_chain=banking_bot,
+            embedder=embedder,
+            collection=collection,
+            query_language="en" if "Comment" not in query else "fr"
+        )
+        
+        actual_response = bot_output.get("response", "")
+        latency = time.time() - start_time
+        
+        # 2. Score the Output
+        overlap_score = calculate_word_overlap(actual_response, expected)
+        guardrail_passed = evaluate_guardrail(query, actual_response, expected)
+        
+        # Define pass/fail criteria:
+        # A test passes if the safety guardrails worked AND we got a reasonable overlap score (e.g., > 15% keyword match)
+        is_pass = guardrail_passed and (overlap_score > 0.15 or "cannot find" in expected)
+        
+        if is_pass:
+            passed_count += 1
+            status = "✅ PASS"
+        else:
+            status = "❌ FAIL"
+            
+        print(f"[{idx}/{total_tests}] {status} | Latency: {latency:.2f}s | Query: {query[:40]}...")
+        if not is_pass:
+            print(f"   ↳ Expected: {expected}")
+            print(f"   ↳ Got:      {actual_response}")
+            
+        results.append({
+            "query": query,
+            "expected": expected,
+            "actual": actual_response,
+            "overlap_score": overlap_score,
+            "pass": is_pass,
+            "latency": latency
+        })
+
+    # --- RENDER RESULTS SUMMARY ---
+    print("=" * 60)
+    print("                    EVALUATION REPORT")
+    print("=" * 60)
+    print(f"Total Tests Run: {total_tests}")
+    print(f"Passed:          {passed_count}")
+    print(f"Failed:          {total_tests - passed_count}")
+    print(f"Success Rate:    {(passed_count / total_tests) * 100:.1f}%")
+    print(f"Average Latency: {sum(r['latency'] for r in results)/total_tests:.2f}s")
+    print("=" * 60)
+
+if __name__ == "__main__":
+    run_evaluation()

@@ -6,6 +6,9 @@ from langchain_community.chat_message_histories import SQLChatMessageHistory
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.output_parsers import JsonOutputParser
 
+import argostranslate.package
+import argostranslate.translate
+
 
 import chromadb
 import html
@@ -43,7 +46,7 @@ QUERY_CACHE_SIMILARITY_THRESHOLD = 0.95
 # query as off-topic/out-of-bounds and skip building context + calling the LLM entirely.
 # NOTE: Chroma's default distance metric depends on how the collection was created (L2 vs
 # cosine) - this value may need tuning against the banking_kb collection.
-IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 6
+IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 7
 
 def detect_bank_from_filename(filename: str) -> str:
     name = filename.lower()
@@ -112,6 +115,17 @@ def enforce_response_language(parsed_output: dict, query_language: str, banking_
     parsed_output["confidence_score"] = 0.0
     return parsed_output
 
+def translate_response_language(parsed_output: dict, query_language: str):
+    # Note: You will need to download and install language packages 
+    # (e.g., english-to-french) on your first run.
+    # Under the hood, this executes completely locally on your machine.
+    lang1 = "en"
+    if lang1 == query_language:
+        return parsed_output
+    else:
+        translated_text = argostranslate.translate.translate(parsed_output, "en", query_language)
+        return translated_text
+
 def get_source_url(filename: str, category: str) -> str:
     if category == "policy":
         return BANK_URLS["rbi"]
@@ -130,7 +144,7 @@ class BankingBotResponse(BaseModel):
 
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
-def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=None, max_chars=3000):
+def retrieve_context(collection, top_k=3, query_embedding=None, max_chars=3000):
     results = collection.query(
         # Searching the Vector Database (Find documents that are similar to the embedded user query)
         query_embeddings=query_embedding,
@@ -146,6 +160,7 @@ def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=
     # Iterating and Building the Context
     context_parts = []
     sources = []
+    
     for chunk, meta in zip(chunks, metadatas):
         source = meta.get("source_file", "unknown")
         category = meta.get("category", "unknown")
@@ -160,12 +175,12 @@ def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=
 
     context = "\n\n".join(context_parts)
 
-    # if len(context) > max_chars:
-    #     truncated = context[:max_chars]
-    #     last_space = truncated.rfind(" ")
-    #     if last_space != -1:
-    #         truncated = truncated[:last_space]
-    #     context = truncated
+    if len(context) > max_chars:
+        truncated = context[:max_chars]
+        last_space = truncated.rfind(" ")
+        if last_space != -1:
+            truncated = truncated[:last_space]
+        context = truncated
 
     # RELEVANCE ADDITION: the closest (smallest) distance among the top_k hits. If even the
     # closest banking document is nowhere near the query, the query is probably off-topic.
@@ -219,7 +234,7 @@ def detect_query_language(user_query: str) -> str:
 def initialize_llm_interface():
     llm = ChatOllama(
         model="llama3.2",  # Connect to local Llama 3.2 model
-        temperature=0.1,  # low temperature for deterministic output
+        temperature=0.3,  # low temperature for deterministic output
         format="json",
         num_predict=300,  # caps generation length (caps how many tokens it can generate) — JSON answers don't need more
         num_ctx=2048,  # bounds context so prompt eval doesn't blow up/grow unbounded
@@ -236,7 +251,7 @@ def initialize_llm_interface():
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
-            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "3. Answer the question using ONLY the provided Context."# If absent, reply with the exact phrase: 'I cannot find that information in our current policies.' in the same language the user's query was in\n\n"
             # "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "4. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "5. LANGUAGE RULE:\n"
@@ -279,7 +294,7 @@ CHAT_HISTORY_ENGINE = create_engine(
 )
 
 # How many recent messages (user+ai combined) to send to the LLM as chat_history.
-# Sending the entire unbounded history back on every turn slows down prompt processing
+# Sending the entire unbounded history back on every turn slows down prompt essing
 # as a conversation grows, so we cap it to a recent rolling window.
 MAX_HISTORY_MESSAGES = 6
 
@@ -486,9 +501,9 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         # RELEVANCE ADDITION: do the vector-store lookup once, and check how close the nearest
         # banking document actually is before deciding whether to build full context / call the LLM.
         rag_context, sources, best_distance, _ = retrieve_context(
-            current_query, embedder, collection, top_k=top_k, query_embedding=query_embedding
+            collection, top_k=top_k, query_embedding=query_embedding
         )
-        mock_context = ("You can open a savings account for $5")
+        print(rag_context)
 
         if best_distance > IRRELEVANT_QUERY_DISTANCE_THRESHOLD:
             # --- RELEVANCE SHORT-CIRCUIT: nothing in the knowledge base is even remotely close
@@ -504,16 +519,16 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         else:
             try:
                 parsed_output = banking_bot_chain.invoke({ #gets the LLM response
-                    "context": mock_context, #input context
+                    "context": rag_context, #input context
                     "chat_history": past_messages, #input chat history
                     "user_query": current_query, #input user query
                     "user_profile": formatted_profile ,#input personalization profile
                     "query_language": query_language   # Add this line
                 })
-                parsed_output = enforce_response_language(
-                    parsed_output, query_language, banking_bot_chain,
-                    rag_context, past_messages, current_query, formatted_profile
-                )
+                # parsed_output = enforce_response_language(
+                #     parsed_output, query_language, banking_bot_chain,
+                #     rag_context, past_messages, current_query, formatted_profile
+                # )
             except Exception as e:
                 print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
                 parsed_output = {
