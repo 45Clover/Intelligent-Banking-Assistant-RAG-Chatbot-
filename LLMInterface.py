@@ -14,16 +14,9 @@ import os
 os.environ["HF_HUB_OFFLINE"] = "1"  # trying to make it faster
 from sentence_transformers import SentenceTransformer
 
-# import sqlite3
-
-# conn = sqlite3.connect("chat_history.db")
-# cursor = conn.cursor()
-
-# # See what tables exist
-# cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-# print("From Sqlite: ",cursor.fetchall())
-
 import sqlite3  # used below for the user_profiles personalization table
+
+import numpy as np
 
 import jwt
 import datetime
@@ -37,6 +30,20 @@ BANK_URLS = {
     "rbi": "https://www.rbi.org.in/Scripts/publications.aspx"
 }
 
+# --- CACHE FEATURE ADDITIONS: SEMANTIC QUERY CACHE ---
+# If a new question's embedding is nearly identical to one we've already answered, we skip
+# RAG retrieval and the LLM call entirely and just reuse the prior answer/sources/confidence.
+
+# Cosine similarity threshold for treating two queries as "the same question". 1.0 = identical
+# vectors. Tune this up/down based on how strict you want the duplicate-detection to be.
+QUERY_CACHE_SIMILARITY_THRESHOLD = 0.95
+
+# --- RELEVANCE FEATURE ADDITION ---
+# If even the closest banking document is farther than this from the query, we treat the
+# query as off-topic/out-of-bounds and skip building context + calling the LLM entirely.
+# NOTE: Chroma's default distance metric depends on how the collection was created (L2 vs
+# cosine) - this value may need tuning against the banking_kb collection.
+IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 6
 
 def detect_bank_from_filename(filename: str) -> str:
     name = filename.lower()
@@ -123,8 +130,7 @@ class BankingBotResponse(BaseModel):
 
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
-def retrieve_context(user_query, embedder, collection, top_k=3, max_chars=3000):
-    query_embedding = embedder.encode([user_query]).tolist()  # Converting Text to Numbers (Embedding)
+def retrieve_context(user_query, embedder, collection, top_k=3, query_embedding=None, max_chars=3000):
     results = collection.query(
         # Searching the Vector Database (Find documents that are similar to the embedded user query)
         query_embeddings=query_embedding,
@@ -135,6 +141,7 @@ def retrieve_context(user_query, embedder, collection, top_k=3, max_chars=3000):
     chunks = results["documents"][0]  # The actual raw text blocks extracted from your bank PDFs/FAQs.
     metadatas = results["metadatas"][
         0]  # Accompanying key-value data about those blocks (like file name or category) that is saved during the ingestion phase.
+    distances = results["distances"][0] #RELEVANCE ADDITION: lower distance = the retrieved chunk is a closer semantic match to the query
 
     # Iterating and Building the Context
     context_parts = []
@@ -153,16 +160,20 @@ def retrieve_context(user_query, embedder, collection, top_k=3, max_chars=3000):
 
     context = "\n\n".join(context_parts)
 
-    if len(context) > max_chars:
-        truncated = context[:max_chars]
-        last_space = truncated.rfind(" ")
-        if last_space != -1:
-            truncated = truncated[:last_space]
-        context = truncated
+    # if len(context) > max_chars:
+    #     truncated = context[:max_chars]
+    #     last_space = truncated.rfind(" ")
+    #     if last_space != -1:
+    #         truncated = truncated[:last_space]
+    #     context = truncated
+
+    # RELEVANCE ADDITION: the closest (smallest) distance among the top_k hits. If even the
+    # closest banking document is nowhere near the query, the query is probably off-topic.
+    best_distance = min(distances) if distances else float("inf")
 
     print(f"[DEBUG] context length: {len(context)} chars")
     print(f"[DEBUG] context tail: ...{context[-50:]}")
-    return context, sources
+    return context, sources, best_distance, query_embedding
 # Manual language override — lets a user force the response language,
 # bypassing detect_query_language entirely for that session until changed again.
 SESSION_LANGUAGE_OVERRIDE = {}
@@ -208,7 +219,7 @@ def detect_query_language(user_query: str) -> str:
 def initialize_llm_interface():
     llm = ChatOllama(
         model="llama3.2",  # Connect to local Llama 3.2 model
-        temperature=0.2,  # low temperature for deterministic output
+        temperature=0.1,  # low temperature for deterministic output
         format="json",
         num_predict=300,  # caps generation length (caps how many tokens it can generate) — JSON answers don't need more
         num_ctx=2048,  # bounds context so prompt eval doesn't blow up/grow unbounded
@@ -221,15 +232,14 @@ def initialize_llm_interface():
     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
-            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
             "Analyze the given user query against the provided Context Documents.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
             "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
-            "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
-            "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
-            "6. LANGUAGE RULE:\n"
+            # "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
+            "4. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
+            "5. LANGUAGE RULE:\n"
             "Current required response language: {query_language}\n"
             "STRICT RULE: If language is 'en', output ONLY English.\n"
             "STRICT RULE: If language is 'fr', output ONLY French.\n"
@@ -259,8 +269,14 @@ DB_CONNECTION_STRING = "sqlite:///chat_history.db"
 # Reuse one engine across requests instead of letting SQLChatMessageHistory open a fresh
 # connection pool every single turn - opening/closing engines repeatedly was adding latency.
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 
-CHAT_HISTORY_ENGINE = create_engine(DB_CONNECTION_STRING)
+CHAT_HISTORY_ENGINE = create_engine(
+    DB_CONNECTION_STRING,
+    connect_args={"check_same_thread": False}, # Crucial for FastAPI/multithreading
+    poolclass=StaticPool,                      # Maintains connection availability
+    pool_pre_ping=True                         # Checks if connection is alive before using it
+)
 
 # How many recent messages (user+ai combined) to send to the LLM as chat_history.
 # Sending the entire unbounded history back on every turn slows down prompt processing
@@ -291,8 +307,21 @@ def _get_profile_db_connection():
                 past_queries TEXT
             )
         """)
+        # CACHE FEATURE ADDITION: table backing the semantic query cache (see find_cached_response /
+        # store_query_in_cache below). Stores every question we've already answered, along with the
+        # embedding, so a near-duplicate question later can be answered instantly without RAG + the LLM.
+        _PROFILE_CONN.execute("""
+            CREATE TABLE IF NOT EXISTS query_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                query_text TEXT,
+                query_embedding TEXT,
+                intent TEXT,
+                confidence_score REAL,
+                response TEXT,
+                sources_json TEXT
+            )
+        """)
     return _PROFILE_CONN
-
 
 def get_user_profile(session_id: str) -> dict:
     # Returns the stored personalization profile for a session, or sensible defaults if none exists yet.
@@ -352,9 +381,72 @@ def format_profile_for_prompt(profile: dict) -> str:
     recent = "; ".join(profile["past_queries"]) if profile["past_queries"] else "none"
     return f"Preferred account type: {preferred}\nRecent topics discussed: {recent}"
 
+def _cosine_similarity(vec_a, vec_b):
+    # Small local helper so two embeddings can be compared without pulling in a heavier ML library.
+    a = np.array(vec_a)
+    b = np.array(vec_b)
+    denom = np.linalg.norm(a) * np.linalg.norm(b)
+    if denom == 0:
+        return 0.0
+    return float(np.dot(a, b) / denom)
 
-def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, rag_context: str,
-                                  query_language: str):
+
+def find_cached_response(query_embedding: list):
+    # Looks through every previously-answered question's embedding for the closest match.
+    # Returns a cached parsed_output-style dict (intent/confidence_score/response/sources)
+    # if a near-duplicate question is found above QUERY_CACHE_SIMILARITY_THRESHOLD, else None.
+    try:
+        with _profile_conn_lock:
+            conn = _get_profile_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT query_embedding, intent, confidence_score, response, sources_json FROM query_cache")
+            rows = cursor.fetchall()
+
+        best_match = None
+        best_similarity = 0.0
+        for embedding_json, intent, confidence_score, response, sources_json in rows:
+            cached_embedding = json.loads(embedding_json)
+            similarity = _cosine_similarity(query_embedding, cached_embedding)
+            if similarity > best_similarity:
+                best_similarity = similarity
+                best_match = {
+                    "intent": intent,
+                    "confidence_score": confidence_score,
+                    "response": response,
+                    "sources": json.loads(sources_json) if sources_json else []
+                }
+
+        if best_match is not None and best_similarity >= QUERY_CACHE_SIMILARITY_THRESHOLD:
+            print(f"[CACHE HIT] similarity={best_similarity:.3f} - reusing prior answer, skipping RAG + LLM")
+            return best_match
+
+        return None
+    except:
+        return None
+
+
+def store_query_in_cache(query_text: str, query_embedding: list, parsed_output: dict, sources: list):
+    # Saves this turn's question + answer so a future near-duplicate question can be
+    # answered instantly from cache instead of re-running retrieval and the LLM.
+    # query_text itself is stored only for debugging/inspection - matching is done purely on embeddings.
+    with _profile_conn_lock:
+        conn = _get_profile_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO query_cache (query_text, query_embedding, intent, confidence_score, response, sources_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            query_text,
+            json.dumps(query_embedding),
+            parsed_output.get("intent", "out_of_bounds"),
+            parsed_output.get("confidence_score", 0.0),
+            parsed_output.get("response", ""),
+            json.dumps(sources)
+        ))
+        conn.commit()
+
+def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_bot_chain, embedder, collection, query_language, top_k: int = 3):
+    
     t0 = time.time()
     chat_history_db = SQLChatMessageHistory(
         session_id=session_id,
@@ -368,40 +460,76 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t2 = time.time()
     print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")  # Test Run Time
 
+    query_embedding = embedder.encode([current_query]).tolist()[0] #Converting Text to Numbers (Embedding)
     # Fetch this session's personalization profile (preferred account type + recent past queries)
     user_profile = get_user_profile(session_id)
     formatted_profile = format_profile_for_prompt(user_profile)
 
-    try:
-        parsed_output = banking_bot_chain.invoke({  # gets the LLM response
-            "context": rag_context,  # input context
-            "chat_history": past_messages,  # input chat history
-            "user_query": current_query,  # input user query
-            "user_profile": formatted_profile,  # input personalization profile
-            "query_language": query_language  # Add this line
-        })
-    except Exception as e:
-        print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
-        parsed_output = {
-            "intent": "out_of_bounds",
-            "confidence_score": 0.0,
-            "response": "I cannot find that information in our current policies."
-        }
-    parsed_output = enforce_response_language(
-        parsed_output, query_language, banking_bot_chain,
-        rag_context, past_messages, current_query, formatted_profile
-    )
 
-    if "response" in parsed_output:
-        parsed_output["response"] = html.unescape(parsed_output["response"])
+    cached_result = find_cached_response(query_embedding) #determine if we've already seen the user query before
+    was_cache_hit = cached_result is not None
+    t2b = time.time()
+    print(f"[TIMING]   cache lookup: {t2b - t2:.2f}s")
+
+    if was_cache_hit:
+        # --- CACHE HIT: we've already answered a near-identical question before, so reuse that
+        # answer, confidence score, and source documents. RAG retrieval and the LLM are both skipped. ---
+        parsed_output = {
+            "intent": cached_result["intent"],
+            "confidence_score": cached_result["confidence_score"],
+            "response": cached_result["response"],
+        }
+
+
+        sources = cached_result["sources"]
+    else:
+        # RELEVANCE ADDITION: do the vector-store lookup once, and check how close the nearest
+        # banking document actually is before deciding whether to build full context / call the LLM.
+        rag_context, sources, best_distance, _ = retrieve_context(
+            current_query, embedder, collection, top_k=top_k, query_embedding=query_embedding
+        )
+        mock_context = ("You can open a savings account for $5")
+
+        if best_distance > IRRELEVANT_QUERY_DISTANCE_THRESHOLD:
+            # --- RELEVANCE SHORT-CIRCUIT: nothing in the knowledge base is even remotely close
+            # to this query, so it's very likely off-topic/out-of-bounds. Skip calling the LLM
+            # with the retrieved context and just answer directly with low confidence. ---
+            print(f"[RELEVANCE] best_distance={best_distance:.3f} exceeds threshold {IRRELEVANT_QUERY_DISTANCE_THRESHOLD} - treating as out-of-bounds, skipping LLM call")
+            parsed_output = {
+                "intent": "out_of_bounds",
+                "confidence_score": 0.0,
+                "response": "I cannot find that information in our current policies."
+            }
+            sources = []  # no context was actually used to answer, so there's nothing to cite
+        else:
+            try:
+                parsed_output = banking_bot_chain.invoke({ #gets the LLM response
+                    "context": mock_context, #input context
+                    "chat_history": past_messages, #input chat history
+                    "user_query": current_query, #input user query
+                    "user_profile": formatted_profile ,#input personalization profile
+                    "query_language": query_language   # Add this line
+                })
+                parsed_output = enforce_response_language(
+                    parsed_output, query_language, banking_bot_chain,
+                    rag_context, past_messages, current_query, formatted_profile
+                )
+            except Exception as e:
+                print(f"[WARNING] JSON parsing failed, using fallback response: {e}")
+                parsed_output = {
+                    "intent": "out_of_bounds",
+                    "confidence_score": 0.0,
+                    "response": "I cannot find that information in our current policies. [Error has occured]"
+                }
+                raise e
+    
     t3 = time.time()
-    print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
+    print(f"[TIMING]   RAG + LLM chain (or cache/relevance shortcut): {t3 - t2b:.2f}s")
     print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
 
     if "response" in parsed_output:
         parsed_output["response"] = html.unescape(parsed_output["response"])
-    chat_history_db.add_user_message(
-        current_query)  # add user query and LLM response to the SQLite database for future context [for the specific user session]
+    chat_history_db.add_user_message(current_query) #add user query and LLM response to the SQLite database for future context [for the specific user session]
     chat_history_db.add_ai_message(parsed_output["response"])
     t4 = time.time()
     print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
@@ -411,7 +539,14 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
     t5 = time.time()
     print(f"[TIMING]   update user profile: {t5 - t4:.2f}s")
 
+    # CACHE FEATURE ADDITION: remember this question/answer so a future near-duplicate can be
+    # served instantly from cache. Skip re-storing if this turn was itself already a cache hit,
+    # so we don't keep piling up redundant near-identical rows.
+    if not was_cache_hit:
+        store_query_in_cache(current_query, query_embedding, parsed_output, sources)
+
     parsed_output["user_profile"] = updated_profile
+    parsed_output["sources"] = sources
 
     return parsed_output
 
