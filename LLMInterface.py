@@ -221,7 +221,7 @@ def initialize_llm_interface():
     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
-            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
+            "You are an automated, compliant banking compliance assistant for a Bank.\n"
             "Analyze the given user query against the provided Context Documents.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
