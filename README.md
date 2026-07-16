@@ -34,7 +34,7 @@ A Retrieval-Augmented Generation (RAG) chatbot that answers customer queries by 
 |---|---|
 | Frameworks | FastAPI, Pydantic, LangChain Core |
 | Vector Database | ChromaDB (configured with cosine distance space) |
-| Models | Gemini 3.5 Flash (`ChatGoogleGenerativeAI`), SentenceTransformers (MiniLM-L12) |
+| Models | Ollama (`ChatOllama`), SentenceTransformers (MiniLM-L12) |
 | Database & Memory | SQLite, SQLAlchemy |
 | Security & Language | PyJWT (HS256), langdetect |
 
@@ -55,25 +55,7 @@ A Retrieval-Augmented Generation (RAG) chatbot that answers customer queries by 
 
 Ensure you have Python 3.10+ installed.
 
-### 2. Environment configuration
-
-Securely set your API tokens and authentication keys as environment variables in your terminal.
-
-**Windows (Command Prompt):**
-
-```dos
-set GEMINI_API_KEY=AIzaSyYourGeminiKeyHere
-set JWT_SECRET_KEY=your_cryptographically_secure_32_byte_string_minimum
-```
-
-**Linux / macOS:**
-
-```bash
-export GEMINI_API_KEY="AIzaSyYourGeminiKeyHere"
-export JWT_SECRET_KEY="your_cryptographically_secure_32_byte_string_minimum"
-```
-
-### 3. Database ingestion setup
+### 2. Database ingestion setup
 
 Before running the server, you need to load your banking documents into the vector database, set up to compare things using cosine distance (a way of measuring how similar two pieces of text are):
 
@@ -83,8 +65,9 @@ collection = chroma_client.create_collection(
     metadata={"hnsw:space": "cosine"}  # Bounds distance between 0.0 and 2.0
 )
 ```
+However, this step should already be done.
 
-### 4. Run the API server
+### 3. Run the API server
 
 To start the backend application server listening for incoming UI payload requests:
 
@@ -93,6 +76,14 @@ python -m uvicorn server:app --reload --port 8000
 ```
 
 > **Note:** drop `--reload` for demo/production runs — it restarts the server whenever ChromaDB or SQLite files change during normal operation, which you don't want mid-demo.
+
+### 4. Opening the User Interface
+
+This can be done using
+```bash
+npm run dev
+```
+A link should appear in the terminal, that will send you to the website
 
 ## 📡 API Architecture Overview
 
@@ -128,17 +119,17 @@ Returns a securely signed, anonymous guest authentication JWT token so the syste
 
 ```json
 {
-  "response": "To open a savings account, you will need...",
-  "confidence_score": 0.95,
+  "response": "To open a savings account, you will need...",   <- Appears in the chat history
+  "confidence_score": 0.95,   <- Appears at the left side of the web page
   "sources": [
     {
       "name": "sbi_savings_faq.pdf",
-      "url": "https://sbi.bank.in/web/customer-care/faq-s"
+      "url": "https://sbi.bank.in/web/customer-care/faq-s"   <- Appears at the left side of the web page
     }
   ],
   "user_profile": {
-    "preferred_account_type": "savings/checking account",
-    "past_queries": ["What are the requirements for an SBI savings account?"]
+    "preferred_account_type": "savings/checking account",   <- Hidden from the user (user personalization)
+    "past_queries": ["What are the requirements for an SBI savings account?"]   <- Old chat history
   }
 }
 ```
