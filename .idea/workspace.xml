@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="llm embedding switch mb ... its slow as hell though now">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="testing and i just changed the a word" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -456,7 +454,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784177228052</updated>
     </task>
-    <option name="localTasksCounter" value="47" />
+    <task id="LOCAL-00047" summary="testing and i just changed the a word">
+      <option name="closed" value="true" />
+      <created>1784181471676</created>
+      <option name="number" value="00047" />
+      <option name="presentableId" value="LOCAL-00047" />
+      <option name="project" value="LOCAL" />
+      <updated>1784181471677</updated>
+    </task>
+    <option name="localTasksCounter" value="48" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -483,7 +489,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="converted chunks into 384 number vector and saved everything(text, metadat and embedding together ) into chunks with embedding,pkl" />
     <MESSAGE value="Sorry Columbia vs Switzerland ditracted me but I used chromadb and installed like the basic version ... rn i just tested it works well but i think the issue is more so the dataset i need more FAQs ." />
     <MESSAGE value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
     <MESSAGE value="ran the interface and it works" />
@@ -508,7 +513,8 @@
     <MESSAGE value="idk why but the LLM and server switched" />
     <MESSAGE value="truncating ... and minor text ill testing id say 8/15" />
     <MESSAGE value="llm embedding switch mb ... its slow as hell though now" />
-    <option name="LAST_COMMIT_MESSAGE" value="llm embedding switch mb ... its slow as hell though now" />
+    <MESSAGE value="testing and i just changed the a word" />
+    <option name="LAST_COMMIT_MESSAGE" value="testing and i just changed the a word" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
