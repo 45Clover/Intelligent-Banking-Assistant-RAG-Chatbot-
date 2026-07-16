@@ -123,7 +123,7 @@ class BankingBotResponse(BaseModel):
 
 
 # the retrieval function: takes user query, embeds it, gets back top k chunks
-def retrieve_context(user_query, embedder, collection, top_k=3):
+def retrieve_context(user_query, embedder, collection, top_k=3, max_chars=3000):
     query_embedding = embedder.encode([user_query]).tolist()  # Converting Text to Numbers (Embedding)
     results = collection.query(
         # Searching the Vector Database (Find documents that are similar to the embedded user query)
@@ -152,6 +152,16 @@ def retrieve_context(user_query, embedder, collection, top_k=3):
         })
 
     context = "\n\n".join(context_parts)
+
+    if len(context) > max_chars:
+        truncated = context[:max_chars]
+        last_space = truncated.rfind(" ")
+        if last_space != -1:
+            truncated = truncated[:last_space]
+        context = truncated
+
+    print(f"[DEBUG] context length: {len(context)} chars")
+    print(f"[DEBUG] context tail: ...{context[-50:]}")
     return context, sources
 # Manual language override — lets a user force the response language,
 # bypassing detect_query_language entirely for that session until changed again.
