@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="testing no code change 12/17 french">
+    <list default="true" id="afa6f9ae-0138-43f4-a519-e8b62f8cb56a" name="Changes" comment="tested .....demo">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -87,14 +87,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1783369851723</updated>
-    </task>
-    <task id="LOCAL-00001" summary="FAQ's, source , SBI">
-      <option name="closed" value="true" />
-      <created>1783378695937</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1783378695937</updated>
     </task>
     <task id="LOCAL-00002" summary="adding file with tests for code performance">
       <option name="closed" value="true" />
@@ -480,7 +472,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784182910842</updated>
     </task>
-    <option name="localTasksCounter" value="50" />
+    <task id="LOCAL-00050" summary="tested .....demo">
+      <option name="closed" value="true" />
+      <created>1784230503221</created>
+      <option name="number" value="00050" />
+      <option name="presentableId" value="LOCAL-00050" />
+      <option name="project" value="LOCAL" />
+      <updated>1784230503222</updated>
+    </task>
+    <option name="localTasksCounter" value="51" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -507,7 +507,6 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="ok so i pulled the LLminterface and updated it so it can retrieve from the DB right some question wont work cause the database is wonking i'll add more FAQS and policies then it should all be operational .. fix interface later" />
     <MESSAGE value="ran the interface and it works" />
     <MESSAGE value="fixed retrieval and response" />
     <MESSAGE value="fixed retrieval and response and" />
@@ -532,7 +531,8 @@
     <MESSAGE value="llm embedding switch mb ... its slow as hell though now" />
     <MESSAGE value="testing and i just changed the a word" />
     <MESSAGE value="testing no code change 12/17 french" />
-    <option name="LAST_COMMIT_MESSAGE" value="testing no code change 12/17 french" />
+    <MESSAGE value="tested .....demo" />
+    <option name="LAST_COMMIT_MESSAGE" value="tested .....demo" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
