@@ -27,7 +27,7 @@ banking_bot = initialize_llm_interface() #get the LLM chain initialized and read
 print(f"[STARTUP] initialize_llm_interface: {time.time() - t0:.2f}s", flush=True )
 
 t1 = time.time()
-embedder = SentenceTransformer("all-MiniLM-L6-v2")
+embedder = SentenceTransformer("paraphrase-multilingual-MiniLM-L12-v2")
 print(f"[STARTUP] SentenceTransformer load: {time.time() - t1:.2f}s", flush=True)
 
 t2 = time.time()

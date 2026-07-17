@@ -46,7 +46,7 @@ QUERY_CACHE_SIMILARITY_THRESHOLD = 0.95
 # query as off-topic/out-of-bounds and skip building context + calling the LLM entirely.
 # NOTE: Chroma's default distance metric depends on how the collection was created (L2 vs
 # cosine) - this value may need tuning against the banking_kb collection.
-IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 7
+IRRELEVANT_QUERY_DISTANCE_THRESHOLD = 17
 
 def detect_bank_from_filename(filename: str) -> str:
     name = filename.lower()
@@ -234,7 +234,7 @@ def detect_query_language(user_query: str) -> str:
 def initialize_llm_interface():
     llm = ChatOllama(
         model="llama3.2",  # Connect to local Llama 3.2 model
-        temperature=0.3,  # low temperature for deterministic output
+        temperature=0,  # low temperature for deterministic output
         format="json",
         num_predict=300,  # caps generation length (caps how many tokens it can generate) — JSON answers don't need more
         num_ctx=2048,  # bounds context so prompt eval doesn't blow up/grow unbounded
