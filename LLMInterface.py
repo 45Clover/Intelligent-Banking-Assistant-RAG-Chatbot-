@@ -226,7 +226,7 @@ def initialize_llm_interface():
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
-            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "3. Answer the question using ONLY the provided Context.\n"# If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
             "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "6. LANGUAGE RULE:\n"
@@ -361,16 +361,18 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         connection=CHAT_HISTORY_ENGINE
     )
     t1 = time.time()
-    print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s")  # Test Run time
+    # print(f"[TIMING]   SQLChatMessageHistory init: {t1 - t0:.2f}s")  # Test Run time
 
     past_messages = chat_history_db.messages[
         -MAX_HISTORY_MESSAGES:]  # cap history window so prompt processing time doesn't grow with the conversation
     t2 = time.time()
-    print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")  # Test Run Time
+    # print(f"[TIMING]   fetch past_messages: {t2 - t1:.2f}s")  # Test Run Time
 
     # Fetch this session's personalization profile (preferred account type + recent past queries)
     user_profile = get_user_profile(session_id)
     formatted_profile = format_profile_for_prompt(user_profile)
+    
+    print(rag_context)
 
     try:
         parsed_output = banking_bot_chain.invoke({  # gets the LLM response
@@ -396,20 +398,28 @@ def process_user_turn_with_sqlite(session_id: str, current_query: str, banking_b
         parsed_output["response"] = html.unescape(parsed_output["response"])
     t3 = time.time()
     print(f"[TIMING]   LLM chain.invoke: {t3 - t2:.2f}s")
-    print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
+    # print(f"[DEBUG] response length in chars: {len(str(parsed_output))}")
 
+    #FEEL FREE TO REMOVE THIS PART (ITS ONLY FOR THE TEST RESPONSES)
     if "response" in parsed_output:
         parsed_output["response"] = html.unescape(parsed_output["response"])
     chat_history_db.add_user_message(
         current_query)  # add user query and LLM response to the SQLite database for future context [for the specific user session]
-    chat_history_db.add_ai_message(parsed_output["response"])
+    # 1. Safely extract the response with a default fallback message
+    ai_response = parsed_output.get("response")
+    if not ai_response:
+        # If "response" is missing, check if there's a fallback key, 
+        # otherwise default to your standard safety disclaimer
+        ai_response = parsed_output.get("error") or parsed_output.get("message") or "I cannot find that information in our current policies."
+    # 2. Add the safe string to your database
+    chat_history_db.add_ai_message(ai_response)
     t4 = time.time()
-    print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
+    # print(f"[TIMING]   write messages to DB: {t4 - t3:.2f}s")
 
     # Persist the updated personalization profile (preferred account type + rolling past queries) for next turn
     updated_profile = update_user_profile(session_id, current_query, parsed_output.get("intent", "out_of_bounds"))
     t5 = time.time()
-    print(f"[TIMING]   update user profile: {t5 - t4:.2f}s")
+    # print(f"[TIMING]   update user profile: {t5 - t4:.2f}s")
 
     parsed_output["user_profile"] = updated_profile
 
