@@ -208,7 +208,7 @@ def detect_query_language(user_query: str) -> str:
 def initialize_llm_interface():
     llm = ChatOllama(
         model="llama3.2",  # Connect to local Llama 3.2 model
-        temperature=0.2,  # low temperature for deterministic output
+        temperature=0,  # low temperature for deterministic output
         format="json",
         num_predict=300,  # caps generation length (caps how many tokens it can generate) — JSON answers don't need more
         num_ctx=2048,  # bounds context so prompt eval doesn't blow up/grow unbounded
@@ -221,12 +221,12 @@ def initialize_llm_interface():
     # Build System Prompt Template injects JSON formatting layout guidelines dynamically
     prompt_template = ChatPromptTemplate.from_messages([
         ("system", (
-            "You are an automated, compliant banking compliance assistant for a Bank.\n"
+            "You are an automated, compliant banking compliance assistant for HCLTech Bank.\n"
             "Analyze the given user query against the provided Context Documents.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
             "1. Classify the user query intent as 'account_inquiry' (savings/checking details), 'loan_inquiry' (mortgages/rates), or 'out_of_bounds' (unrelated/general knowledge).\n"
             "2. Compute a mathematical confidence_score (0.0 to 1.0). If the answer is verbatim in the context, score is high (0.9-1.0). If it requires loose interpretation, score is mid (0.5-0.8). If it's absent from context, score is low (0.0-0.4).\n"
-            "3. Answer the question using ONLY the provided Context.\n"# If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
+            "3. Answer the question using ONLY the provided Context. If absent, reply with the exact phrase: 'I cannot find that information in our current policies.'\n\n"
             "4. If your reponse seems financially harmful, respond by saying: 'My answer may be financially harmful. Please consult our official banking policies or press 'Human Escalation' for a human consultant.'\n"
             "5. Use the User Profile below to personalize your tone and emphasis (e.g. referencing their preferred account type or recent topics). Never invent facts that are not present in the Context.\n"
             "6. LANGUAGE RULE:\n"
