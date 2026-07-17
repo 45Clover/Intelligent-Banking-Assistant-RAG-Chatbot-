@@ -22,10 +22,10 @@ A Retrieval-Augmented Generation (RAG) chatbot that answers customer queries by 
 
 - **Multilingual Semantic Search**: Uses sentence-transformers such as `paraphrase-multilingual-MiniLM-L12-v2` (a sentence-transformer embedding model) so retrieval works across languages natively, not just English.
 - **Dual-Layer Guardrails**:
-  - **Semantic Cache**: Instant 0ms duplicate answer lookups using cosine similarity thresholds (≥ 0.95).
-  - **Distance Cutoff**: Automated out-of-bounds short-circuiting that filters off-topic input before it ever reaches the LLM, saving both latency and API cost.
+  - **Semantic Cache**: Instant 0ms duplicate answer lookups using cosine similarity thresholds (≥ 0.95). [For BankingBotVersion2]
+  - **Distance Cutoff**: Automated out-of-bounds short-circuiting that filters off-topic input before it ever reaches the LLM, saving both latency and API cost. [For BankingBotVersion2]
 - **Persistent SQLite Tracking**: Thread-safe state tracking that manages both rolling conversation history and stateful user profiles (e.g., preferred account tracking).
-- **Structured LLM Processing**: Seamless integration of Gemini (`gemini-3.5-flash`) with enforced JSON schema compliance, so responses are always machine-parseable rather than freeform text.
+- **Structured LLM Processing**: Seamless integration of Gemini (`llama 3.2`) with enforced JSON schema compliance, so responses are always machine-parseable rather than freeform text.
 - **Secure API Design**: Protected FastAPI endpoints requiring signed, cryptographically valid Bearer JWTs for all operations.
 
 ## 🛠️ Tech Stack
@@ -34,7 +34,7 @@ A Retrieval-Augmented Generation (RAG) chatbot that answers customer queries by 
 |---|---|
 | Frameworks | FastAPI, Pydantic, LangChain Core |
 | Vector Database | ChromaDB (configured with cosine distance space) |
-| Models | Ollama (`ChatOllama`), SentenceTransformers (MiniLM-L12) |
+| Models | llama 3.2 (`ChatOllama`), SentenceTransformers (MiniLM-L12) |
 | Database & Memory | SQLite, SQLAlchemy |
 | Security & Language | PyJWT (HS256), langdetect |
 
